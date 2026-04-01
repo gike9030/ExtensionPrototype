@@ -2,10 +2,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35931.197 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Extension.AppHost", "Extension.AppHost\Extension.AppHost.csproj", "{B5E70A11-1481-430F-9C95-7A76C89F5DA5}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Extension.ServiceDefaults", "Extension.ServiceDefaults\Extension.ServiceDefaults.csproj", "{94B4FBEF-C6B1-726C-F5EA-E0514E045CC9}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Extension.ApiService", "Extension.ApiService\Extension.ApiService.csproj", "{7EF5FC19-77AA-4433-108E-29483F1F1FAF}"
 EndProject
 Global
@@ -14,14 +10,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B5E70A11-1481-430F-9C95-7A76C89F5DA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B5E70A11-1481-430F-9C95-7A76C89F5DA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B5E70A11-1481-430F-9C95-7A76C89F5DA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B5E70A11-1481-430F-9C95-7A76C89F5DA5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{94B4FBEF-C6B1-726C-F5EA-E0514E045CC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{94B4FBEF-C6B1-726C-F5EA-E0514E045CC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{94B4FBEF-C6B1-726C-F5EA-E0514E045CC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{94B4FBEF-C6B1-726C-F5EA-E0514E045CC9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7EF5FC19-77AA-4433-108E-29483F1F1FAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7EF5FC19-77AA-4433-108E-29483F1F1FAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7EF5FC19-77AA-4433-108E-29483F1F1FAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
