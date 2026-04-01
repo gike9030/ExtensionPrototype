@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(cmd /c \"taskkill /PID 7012 /F\")",
+      "Bash(echo \"exit: $LASTEXITCODE\")"
+    ]
+  }
+}
