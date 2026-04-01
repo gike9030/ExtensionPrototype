@@ -1,3 +1,7 @@
+# Secrets - never commit these
+appsettings.Development.json
+appsettings.Local.json
+
 # .NET
 bin/
 obj/
