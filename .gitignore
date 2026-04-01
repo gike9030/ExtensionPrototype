@@ -43,6 +43,12 @@ pnpm-debug.log*
 # Vite
 *.local
 
+# VS Code extension build output
+vscode-extension/out/
+vscode-extension/webview-ui/dist/
+vscode-extension/node_modules/
+vscode-extension/webview-ui/node_modules/
+
 # Editor
 .vscode/
 *.swp

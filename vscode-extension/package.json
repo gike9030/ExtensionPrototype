@@ -1,0 +1,44 @@
+{
+  "name": "ai-chat-extension",
+  "displayName": "AI Chat",
+  "description": "AI Chatbot Extension prototype",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ai-chat",
+          "title": "AI Chat",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "ai-chat": [
+        {
+          "type": "webview",
+          "id": "aiChatPanel",
+          "name": "Chat"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "build:webview": "cd webview-ui && npm run build",
+    "install:all": "npm install && cd webview-ui && npm install",
+    "vscode:prepublish": "npm run compile && npm run build:webview"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
+  }
+}
