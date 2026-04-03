@@ -1,0 +1,217 @@
+/* Markdown element styling */
+
+.markdown-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Headings */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  font-weight: 600;
+  color: var(--vscode-textLink-foreground, #4fc1ff);
+  line-height: 1.4;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.markdown-content h1 {
+  font-size: 18px;
+  border-bottom: 1px solid var(--vscode-input-border, #555);
+  padding-bottom: 4px;
+}
+
+.markdown-content h2 {
+  font-size: 16px;
+}
+
+.markdown-content h3 {
+  font-size: 14px;
+}
+
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  font-size: 12px;
+}
+
+/* Paragraphs */
+.markdown-content p {
+  color: var(--vscode-foreground, #ccc);
+  line-height: 1.6;
+  margin: 4px 0;
+}
+
+/* Emphasis */
+.markdown-content strong {
+  font-weight: 700;
+  color: var(--vscode-textLink-foreground, #4fc1ff);
+}
+
+.markdown-content em {
+  font-style: italic;
+  color: var(--vscode-descriptionForeground, #888);
+}
+
+/* Code */
+.markdown-content code {
+  background: var(--vscode-input-background, #2d2d2d);
+  color: var(--vscode-terminal-ansiCyan, #4ec9b0);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.markdown-content pre {
+  background: var(--vscode-input-background, #2d2d2d);
+  border: 1px solid var(--vscode-input-border, #555);
+  border-radius: 6px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 8px 0;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.markdown-content pre code {
+  background: transparent;
+  color: var(--vscode-foreground, #ccc);
+  padding: 0;
+  border-radius: 0;
+}
+
+/* Lists */
+.markdown-content ul,
+.markdown-content ol {
+  margin: 8px 0;
+  padding-left: 24px;
+  color: var(--vscode-foreground, #ccc);
+}
+
+.markdown-content li {
+  margin: 4px 0;
+  line-height: 1.6;
+}
+
+.markdown-content li > p {
+  margin: 2px 0;
+}
+
+/* Blockquotes */
+.markdown-content blockquote {
+  border-left: 3px solid var(--vscode-terminal-ansiGreen, #89d185);
+  padding-left: 12px;
+  margin: 8px 0;
+  color: var(--vscode-descriptionForeground, #888);
+  font-style: italic;
+}
+
+/* Links */
+.markdown-content a {
+  color: var(--vscode-textLink-foreground, #4fc1ff);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.markdown-content a:hover {
+  color: var(--vscode-textLink-activeForeground, #5fa4d0);
+}
+
+/* Tables */
+.markdown-content table {
+  border-collapse: collapse;
+  margin: 8px 0;
+  width: 100%;
+  font-size: 12px;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid var(--vscode-input-border, #555);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown-content th {
+  background: var(--vscode-editorGroupHeader-tabsBackground, #2d2d2d);
+  font-weight: 600;
+  color: var(--vscode-textLink-foreground, #4fc1ff);
+}
+
+.markdown-content tr:nth-child(even) {
+  background: var(--vscode-input-background, #2d2d2d);
+}
+
+/* Horizontal rule */
+.markdown-content hr {
+  border: none;
+  border-top: 1px solid var(--vscode-input-border, #555);
+  margin: 12px 0;
+}
+
+/* Images */
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+/* Task lists (checkboxes) */
+.markdown-content input[type='checkbox'] {
+  accent-color: var(--vscode-terminal-ansiGreen, #89d185);
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.markdown-content input[type='checkbox']:disabled {
+  cursor: default;
+}
+
+/* Break/clear spacing */
+.markdown-content > * + * {
+  margin-top: 0;
+}
+
+/* Small text */
+.markdown-content small {
+  color: var(--vscode-descriptionForeground, #888);
+  font-size: 11px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .markdown-content h1 {
+    font-size: 16px;
+  }
+
+  .markdown-content h2 {
+    font-size: 14px;
+  }
+
+  .markdown-content h3 {
+    font-size: 12px;
+  }
+
+  .markdown-content table {
+    font-size: 11px;
+  }
+
+  .markdown-content th,
+  .markdown-content td {
+    padding: 6px 8px;
+  }
+
+  .markdown-content ul,
+  .markdown-content ol {
+    padding-left: 20px;
+  }
+}
