@@ -2,10 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import './app-layout.css'
 import './App.css'
 import { HistorySidebar } from './components/HistorySidebar'
-import { ChatHeader } from './components/ChatHeader'
 import { MessageBubble } from './components/MessageBubble'
 import { InputArea } from './components/InputArea'
-import { EmptyState } from './components/EmptyState'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -27,8 +25,6 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [chatMode, setChatMode] = useState('Chat')
-  const [model, setModel] = useState('GPT-4')
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom when messages change
@@ -138,11 +134,6 @@ function App() {
     }
   }
 
-  const handleSettings = () => {
-    console.log('Settings clicked')
-    // TODO: Implement settings modal
-  }
-
   return (
     <div className="app-layout">
       <div className="app-sidebar">
@@ -157,27 +148,12 @@ function App() {
 
       <div className="app-main">
         <div className="app-content">
-          <ChatHeader
-            chatMode={chatMode}
-            onChatModeChange={setChatMode}
-            model={model}
-            onModelChange={setModel}
-            onSettings={handleSettings}
-            onClearHistory={handleClearHistory}
-          />
-
           <div className="chat">
             <div className="messages">
               {messages.length === 0 ? (
-                <EmptyState
-                  onExampleClick={text => {
-                    setInput(text)
-                    setTimeout(() => {
-                      // Auto-focus the input after example is clicked
-                      sendMessage()
-                    }, 100)
-                  }}
-                />
+                <div className="empty-state">
+                  <p>Welcome to AI Chat. Start a conversation or select one from the sidebar.</p>
+                </div>
               ) : (
                 <>
                   {messages.map((msg, i) => (
