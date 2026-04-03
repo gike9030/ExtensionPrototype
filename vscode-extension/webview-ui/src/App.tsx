@@ -6,6 +6,7 @@ import { InputArea } from './components/InputArea'
 interface Message {
   role: 'user' | 'assistant'
   content: string
+  metadata?: string // e.g., "Reviewed X files and created Y files"
 }
 
 interface Conversation {
@@ -23,7 +24,6 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom when messages change
@@ -135,63 +135,36 @@ function App() {
 
   return (
     <div className="app">
-      {/* Sidebar */}
-      <div className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
-        <div className="sidebar-header">
-          <button className="search-btn" onClick={() => console.log('search')} title="Search">
-            🔍
+      {/* Header */}
+      <div className="header">
+        <div className="header-left">
+          <button className="back-btn" title="Back to conversations">
+            ←
           </button>
-          <button className="new-chat-btn" onClick={createNewConversation} title="New chat">
-            +
-          </button>
+          <h2 className="header-title">
+            {activeConversationId
+              ? conversations.find(c => c.id === activeConversationId)?.title || 'New Conversation'
+              : 'Copilot Chat'}
+          </h2>
         </div>
-
-        {sidebarOpen && (
-          <div className="sidebar-content">
-            <div className="conversations-list">
-              {conversations.length === 0 ? (
-                <div className="empty-history">No conversations yet</div>
-              ) : (
-                conversations.map(conv => (
-                  <div
-                    key={conv.id}
-                    className={`conversation-item ${
-                      activeConversationId === conv.id ? 'active' : ''
-                    }`}
-                    onClick={() => {
-                      setActiveConversationId(conv.id)
-                      setSidebarOpen(false)
-                    }}
-                  >
-                    <div className="conversation-title">{conv.title}</div>
-                    <button
-                      className="delete-btn"
-                      onClick={e => {
-                        e.stopPropagation()
-                        handleDeleteConversation(conv.id)
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-          ☰
+        <div className="header-right">
+          <button className="header-btn" title="Settings">
+            ⚙️
+          </button>
+          <button className="header-btn" title="Close">
+            ✕
+          </button>
         </div>
       </div>
 
-      {/* Main Chat Area */}
+      {/* Messages Area */}
       <div className="chat-container">
         <div className="messages-area">
           {messages.length === 0 ? (
             <div className="welcome-message">
-              <h1>What can I help you with?</h1>
-              <p>Start a new conversation below</p>
+              <div className="welcome-content">
+                <h1>What can I help you with?</h1>
+              </div>
             </div>
           ) : (
             <div className="messages-list">
@@ -200,12 +173,11 @@ function App() {
                   key={i}
                   role={msg.role}
                   content={msg.content}
-                  timestamp={Date.now()}
-                  onCopy={content => navigator.clipboard.writeText(content)}
+                  metadata={msg.metadata}
                 />
               ))}
               {loading && (
-                <div className="message-bubble assistant loading">
+                <div className="message loading">
                   <div className="typing-indicator">
                     <span></span>
                     <span></span>
@@ -218,7 +190,8 @@ function App() {
           <div ref={bottomRef} />
         </div>
 
-        <div className="input-area">
+        {/* Input Area */}
+        <div className="input-section">
           <InputArea
             value={input}
             onChange={setInput}

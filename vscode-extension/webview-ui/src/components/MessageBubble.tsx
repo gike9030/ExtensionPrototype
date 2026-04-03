@@ -1,5 +1,4 @@
 import './MessageBubble.css'
-import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { CodeBlock } from './CodeBlock'
@@ -8,33 +7,18 @@ import '../markdown.css'
 interface MessageBubbleProps {
   role: 'user' | 'assistant'
   content: string
-  timestamp?: number
-  onCopy?: (content: string) => void
-  onRegenerate?: () => void
+  metadata?: string
 }
 
 export function MessageBubble({
   role,
   content,
-  timestamp,
-  onCopy,
-  onRegenerate,
+  metadata,
 }: MessageBubbleProps) {
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = () => {
-    if (onCopy) {
-      onCopy(content)
-    } else {
-      navigator.clipboard.writeText(content)
-    }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   return (
-    <div className={`message-bubble ${role}`}>
-      <div className="bubble-content markdown-content">
+    <div className={`message ${role}`}>
+      {metadata && <div className="message-metadata">{metadata}</div>}
+      <div className="message-content markdown-content">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{

@@ -1,44 +1,33 @@
-.message-bubble {
+.message {
   display: flex;
-  animation: slideIn 0.3s ease-out;
+  flex-direction: column;
+  gap: 4px;
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.message-metadata {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground, #858585);
+  line-height: 1.5;
 }
 
-.message-bubble.user {
-  justify-content: flex-end;
-}
-
-.message-bubble.assistant {
-  justify-content: flex-start;
-}
-
-.bubble-content {
-  padding: 10px 14px;
-  border-radius: 8px;
+.message-content {
+  background: var(--vscode-list-hoverBackground, #2d2d30);
+  padding: 12px 16px;
+  border-radius: 0;
   line-height: 1.6;
   word-break: break-word;
-  max-width: 90%;
+  color: var(--vscode-foreground, #d4d4d4);
   font-size: 13px;
 }
 
-.message-bubble.user .bubble-content {
-  background: var(--vscode-terminal-ansiBlue, #0e90d4);
-  color: white;
-  border-radius: 0 8px 8px 8px;
+.message.user .message-content {
+  background: transparent;
+  padding: 0;
+  margin-bottom: 4px;
+  color: var(--vscode-foreground, #d4d4d4);
 }
 
-.message-bubble.assistant .bubble-content {
+.message.assistant .message-content {
   background: var(--vscode-list-hoverBackground, #2d2d30);
-  color: var(--vscode-foreground, #e0e0e0);
-  border-radius: 8px 0 8px 8px;
+  padding: 12px 16px;
 }

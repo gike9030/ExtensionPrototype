@@ -16,21 +16,16 @@ export function InputArea({
   onSubmit,
   disabled = false,
   maxLength = 4000,
-  placeholder = 'Message...',
+  placeholder = 'Ask anything...',
 }: InputAreaProps) {
-  const [rows, setRows] = useState(1)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Auto-grow textarea based on content
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
-      const newHeight = Math.min(textareaRef.current.scrollHeight, 150) // Max 150px
+      const newHeight = Math.min(textareaRef.current.scrollHeight, 120)
       textareaRef.current.style.height = `${newHeight}px`
-
-      // Calculate rows for accessibility
-      const lineCount = value.split('\n').length
-      setRows(Math.min(lineCount, 5))
     }
   }, [value])
 
@@ -51,11 +46,21 @@ export function InputArea({
     }
   }
 
-  const characterCountPercentage = (value.length / maxLength) * 100
-
   return (
-    <div className="input-area">
+    <div className="input-wrapper">
+      {/* File Context - Shows active file(s) */}
+      <div className="file-context">
+        <span className="file-badge">+ appsettings.json</span>
+      </div>
+
+      {/* Input Container */}
       <div className="input-container">
+        <div className="input-controls-left">
+          <button className="control-btn" title="Attach file">
+            +
+          </button>
+        </div>
+
         <textarea
           ref={textareaRef}
           value={value}
@@ -63,44 +68,40 @@ export function InputArea({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          rows={rows}
           className="input-textarea"
           aria-label="Message input"
+          rows={1}
         />
 
-        <div className="input-footer">
-          <div className="char-count">
-            <span
-              className={`char-counter ${
-                characterCountPercentage > 90 ? 'warning' : ''
-              }`}
-            >
-              {value.length}/{maxLength}
-            </span>
-            {characterCountPercentage > 0 && (
-              <div className="char-progress">
-                <div
-                  className={`progress-bar ${characterCountPercentage > 90 ? 'warning' : ''}`}
-                  style={{ width: `${characterCountPercentage}%` }}
-                />
-              </div>
-            )}
-          </div>
-
+        <div className="input-controls-right">
+          <button className="control-btn" title="Settings">
+            ⚙️
+          </button>
           <button
             className="submit-btn"
             onClick={onSubmit}
             disabled={disabled || !value.trim()}
-            title={disabled ? 'Waiting for response' : 'Send message (Enter)'}
+            title="Send"
             aria-label="Send message"
           >
-            {disabled ? '⏳' : '✈️'}
+            ↑
           </button>
         </div>
       </div>
 
-      <div className="input-hints">
-        <small>Shift+Enter for newline • Ctrl+/ for voice (future)</small>
+      {/* Bottom Controls */}
+      <div className="input-footer">
+        <div className="footer-controls">
+          <select className="footer-select" defaultValue="local">
+            <option value="local">Local</option>
+            <option value="remote">Remote</option>
+          </select>
+          <div className="control-separator">|</div>
+          <select className="footer-select" defaultValue="approvals">
+            <option value="approvals">Bypass Approvals</option>
+            <option value="strict">Strict Mode</option>
+          </select>
+        </div>
       </div>
     </div>
   )
