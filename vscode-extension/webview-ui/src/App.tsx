@@ -1,7 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import './app-layout.css'
 import './App.css'
-import { HistorySidebar } from './components/HistorySidebar'
 import { MessageBubble } from './components/MessageBubble'
 import { InputArea } from './components/InputArea'
 
@@ -25,6 +23,7 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom when messages change
@@ -135,56 +134,99 @@ function App() {
   }
 
   return (
-    <div className="app-layout">
-      <div className="app-sidebar">
-        <HistorySidebar
-          conversations={conversations}
-          activeConversationId={activeConversationId}
-          onSelectConversation={handleSelectConversation}
-          onNewChat={createNewConversation}
-          onDeleteConversation={handleDeleteConversation}
-        />
+    <div className="app">
+      {/* Sidebar */}
+      <div className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
+        <div className="sidebar-header">
+          <button className="search-btn" onClick={() => console.log('search')} title="Search">
+            🔍
+          </button>
+          <button className="new-chat-btn" onClick={createNewConversation} title="New chat">
+            +
+          </button>
+        </div>
+
+        {sidebarOpen && (
+          <div className="sidebar-content">
+            <div className="conversations-list">
+              {conversations.length === 0 ? (
+                <div className="empty-history">No conversations yet</div>
+              ) : (
+                conversations.map(conv => (
+                  <div
+                    key={conv.id}
+                    className={`conversation-item ${
+                      activeConversationId === conv.id ? 'active' : ''
+                    }`}
+                    onClick={() => {
+                      setActiveConversationId(conv.id)
+                      setSidebarOpen(false)
+                    }}
+                  >
+                    <div className="conversation-title">{conv.title}</div>
+                    <button
+                      className="delete-btn"
+                      onClick={e => {
+                        e.stopPropagation()
+                        handleDeleteConversation(conv.id)
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          ☰
+        </div>
       </div>
 
-      <div className="app-main">
-        <div className="app-content">
-          <div className="chat">
-            <div className="messages">
-              {messages.length === 0 ? (
-                <div className="empty-state">
-                  <p>Welcome to AI Chat. Start a conversation or select one from the sidebar.</p>
-                </div>
-              ) : (
-                <>
-                  {messages.map((msg, i) => (
-                    <MessageBubble
-                      key={i}
-                      role={msg.role}
-                      content={msg.content}
-                      timestamp={Date.now()}
-                      onCopy={content => navigator.clipboard.writeText(content)}
-                    />
-                  ))}
-                  {loading && (
-                    <div className="msg assistant">
-                      <span className="label">AI</span>
-                      <p className="typing">...</p>
-                    </div>
-                  )}
-                </>
-              )}
-              <div ref={bottomRef} />
+      {/* Main Chat Area */}
+      <div className="chat-container">
+        <div className="messages-area">
+          {messages.length === 0 ? (
+            <div className="welcome-message">
+              <h1>What can I help you with?</h1>
+              <p>Start a new conversation below</p>
             </div>
-            
-            <InputArea
-              value={input}
-              onChange={setInput}
-              onSubmit={sendMessage}
-              disabled={loading}
-              maxLength={4000}
-              placeholder="Message..."
-            />
-          </div>
+          ) : (
+            <div className="messages-list">
+              {messages.map((msg, i) => (
+                <MessageBubble
+                  key={i}
+                  role={msg.role}
+                  content={msg.content}
+                  timestamp={Date.now()}
+                  onCopy={content => navigator.clipboard.writeText(content)}
+                />
+              ))}
+              {loading && (
+                <div className="message-bubble assistant loading">
+                  <div className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        <div className="input-area">
+          <InputArea
+            value={input}
+            onChange={setInput}
+            onSubmit={sendMessage}
+            disabled={loading}
+            maxLength={4000}
+            placeholder="Ask anything..."
+          />
         </div>
       </div>
     </div>

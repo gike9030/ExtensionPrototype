@@ -20,7 +20,6 @@ export function MessageBubble({
   onCopy,
   onRegenerate,
 }: MessageBubbleProps) {
-  const [showActions, setShowActions] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
@@ -33,94 +32,33 @@ export function MessageBubble({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const getAvatar = () => {
-    if (role === 'user') return '👤'
-    return '🤖'
-  }
-
-  const formatTime = (ts?: number) => {
-    if (!ts) return ''
-    const date = new Date(ts)
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }
-
   return (
-    <div
-      className={`message-bubble ${role}`}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
-    >
-      <div className="message-avatar">{getAvatar()}</div>
+    <div className={`message-bubble ${role}`}>
+      <div className="bubble-content markdown-content">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            code: ({ node, inline, className, children, ...props }: any) => {
+              const match = /language-(\w+)/.exec(className || '')
+              const language = match ? match[1] : 'plaintext'
+              const codeString = String(children).replace(/\n$/, '')
 
-      <div className="message-content">
-        <div className="message-header">
-          <span className="message-role">
-            {role === 'user' ? 'You' : 'Assistant'}
-          </span>
-          {timestamp && <span className="message-time">{formatTime(timestamp)}</span>}
-        </div>
-
-        <div className="message-text markdown-content">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              code: ({ node, inline, className, children, ...props }: any) => {
-                const match = /language-(\w+)/.exec(className || '')
-                const language = match ? match[1] : 'plaintext'
-                const codeString = String(children).replace(/\n$/, '')
-
-                if (inline) {
-                  return (
-                    <code className="markdown-inline-code" {...props}>
-                      {children}
-                    </code>
-                  )
-                }
-
+              if (inline) {
                 return (
-                  <CodeBlock
-                    code={codeString}
-                    language={language}
-                  />
+                  <code className="markdown-inline-code" {...props}>
+                    {children}
+                  </code>
                 )
-              },
-              pre: ({ children }: any) => (
-                <pre>{children}</pre>
-              ),
-            }}
-          >
-            {content}
-          </ReactMarkdown>
-        </div>
+              }
 
-        {showActions && (
-          <div className="message-actions">
-            <button
-              className="action-btn"
-              onClick={handleCopy}
-              title={copied ? 'Copied!' : 'Copy message'}
-              aria-label="Copy"
-            >
-              {copied ? '✓' : '📋'}
-            </button>
-            {role === 'assistant' && onRegenerate && (
-              <button
-                className="action-btn"
-                onClick={onRegenerate}
-                title="Regenerate response"
-                aria-label="Regenerate"
-              >
-                🔄
-              </button>
-            )}
-            <button className="action-btn" title="Like" aria-label="Like">
-              👍
-            </button>
-            <button className="action-btn" title="Dislike" aria-label="Dislike">
-              👎
-            </button>
-          </div>
-        )}
+              return (
+                <CodeBlock language={language} code={codeString} />
+              )
+            },
+          }}
+        >
+          {content}
+        </ReactMarkdown>
       </div>
     </div>
   )
