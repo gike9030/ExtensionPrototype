@@ -1,9 +1,12 @@
 import './HistorySidebar.css'
+import { SessionCard } from './SessionCard'
+import { FileContext } from './FileContext'
 
 interface Conversation {
   id: string
   title: string
   timestamp: number
+  messages?: Array<{ role: string; content: string }>
 }
 
 interface HistorySidebarProps {
@@ -12,6 +15,7 @@ interface HistorySidebarProps {
   onSelectConversation: (id: string) => void
   onNewChat: () => void
   onDeleteConversation: (id: string) => void
+  activeFilePath?: string
 }
 
 export function HistorySidebar({
@@ -20,59 +24,57 @@ export function HistorySidebar({
   onSelectConversation,
   onNewChat,
   onDeleteConversation,
+  activeFilePath,
 }: HistorySidebarProps) {
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
-
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleDateString()
-  }
-
   return (
     <div className="history-sidebar">
-      <button className="new-chat-btn" onClick={onNewChat} title="Start a new conversation">
-        <span className="icon">+</span>
-        <span className="label">New Chat</span>
-      </button>
+      {/* Header with CHAT label and icons */}
+      <div className="sidebar-header">
+        <div className="sidebar-title">CHAT</div>
+        <div className="sidebar-actions">
+          <button className="sidebar-icon-btn" title="Search" aria-label="Search">
+            🔍
+          </button>
+          <button className="sidebar-icon-btn" title="Filter" aria-label="Filter">
+            ⋮
+          </button>
+        </div>
+      </div>
 
-      <div className="history-list">
+      {/* SESSIONS label */}
+      <div className="sessions-label">SESSIONS</div>
+
+      {/* Sessions list */}
+      <div className="sessions-list">
         {conversations.length === 0 ? (
-          <p className="empty-history">No conversations yet</p>
+          <div className="empty-sessions">
+            <p>No sessions yet</p>
+            <button className="create-session-btn" onClick={onNewChat}>
+              + Create session
+            </button>
+          </div>
         ) : (
           conversations.map(conv => (
-            <div
+            <SessionCard
               key={conv.id}
-              className={`history-item ${activeConversationId === conv.id ? 'active' : ''}`}
-              onClick={() => onSelectConversation(conv.id)}
+              id={conv.id}
               title={conv.title}
-            >
-              <div className="history-content">
-                <p className="history-title">{conv.title}</p>
-                <p className="history-date">{formatDate(conv.timestamp)}</p>
-              </div>
-              <button
-                className="delete-btn"
-                onClick={e => {
-                  e.stopPropagation()
-                  onDeleteConversation(conv.id)
-                }}
-                title="Delete conversation"
-                aria-label="Delete"
-              >
-                ×
-              </button>
-            </div>
+              summary={
+                conv.messages && conv.messages[0]
+                  ? conv.messages[0].content.substring(0, 60)
+                  : undefined
+              }
+              timestamp={conv.timestamp}
+              isActive={activeConversationId === conv.id}
+              onSelect={onSelectConversation}
+              onDelete={onDeleteConversation}
+            />
           ))
         )}
       </div>
+
+      {/* File context at bottom */}
+      <FileContext filePath={activeFilePath} />
     </div>
   )
 }

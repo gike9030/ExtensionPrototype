@@ -1,0 +1,24 @@
+.file-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-top: auto;
+  border-top: 1px solid var(--vscode-panel-border, #333);
+  background: var(--vscode-sideBar-background, #1e1e1e);
+  font-size: 11px;
+  color: var(--vscode-foreground, #ccc);
+}
+
+.file-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.file-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Courier New', monospace;
+  color: var(--vscode-textLink-foreground, #4fc1ff);
+}

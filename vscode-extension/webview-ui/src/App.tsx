@@ -1,15 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
-import './app-layout.css'
 import './App.css'
-import { HistorySidebar } from './components/HistorySidebar'
-import { ChatHeader } from './components/ChatHeader'
 import { MessageBubble } from './components/MessageBubble'
 import { InputArea } from './components/InputArea'
-import { EmptyState } from './components/EmptyState'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
+  metadata?: string // e.g., "Reviewed X files and created Y files"
 }
 
 interface Conversation {
@@ -27,8 +24,6 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [chatMode, setChatMode] = useState('Chat')
-  const [model, setModel] = useState('GPT-4')
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom when messages change
@@ -138,77 +133,73 @@ function App() {
     }
   }
 
-  const handleSettings = () => {
-    console.log('Settings clicked')
-    // TODO: Implement settings modal
-  }
-
   return (
-    <div className="app-layout">
-      <div className="app-sidebar">
-        <HistorySidebar
-          conversations={conversations}
-          activeConversationId={activeConversationId}
-          onSelectConversation={handleSelectConversation}
-          onNewChat={createNewConversation}
-          onDeleteConversation={handleDeleteConversation}
-        />
+    <div className="app">
+      {/* Header */}
+      <div className="header">
+        <div className="header-left">
+          <button className="back-btn" title="Back to conversations">
+            ←
+          </button>
+          <h2 className="header-title">
+            {activeConversationId
+              ? conversations.find(c => c.id === activeConversationId)?.title || 'New Conversation'
+              : 'Copilot Chat'}
+          </h2>
+        </div>
+        <div className="header-right">
+          <button className="header-btn" title="Settings">
+            ⚙️
+          </button>
+          <button className="header-btn" title="Close">
+            ✕
+          </button>
+        </div>
       </div>
 
-      <div className="app-main">
-        <div className="app-content">
-          <ChatHeader
-            chatMode={chatMode}
-            onChatModeChange={setChatMode}
-            model={model}
-            onModelChange={setModel}
-            onSettings={handleSettings}
-            onClearHistory={handleClearHistory}
-          />
-
-          <div className="chat">
-            <div className="messages">
-              {messages.length === 0 ? (
-                <EmptyState
-                  onExampleClick={text => {
-                    setInput(text)
-                    setTimeout(() => {
-                      // Auto-focus the input after example is clicked
-                      sendMessage()
-                    }, 100)
-                  }}
-                />
-              ) : (
-                <>
-                  {messages.map((msg, i) => (
-                    <MessageBubble
-                      key={i}
-                      role={msg.role}
-                      content={msg.content}
-                      timestamp={Date.now()}
-                      onCopy={content => navigator.clipboard.writeText(content)}
-                    />
-                  ))}
-                  {loading && (
-                    <div className="msg assistant">
-                      <span className="label">AI</span>
-                      <p className="typing">...</p>
-                    </div>
-                  )}
-                </>
-              )}
-              <div ref={bottomRef} />
+      {/* Messages Area */}
+      <div className="chat-container">
+        <div className="messages-area">
+          {messages.length === 0 ? (
+            <div className="welcome-message">
+              <div className="welcome-content">
+                <h1>What can I help you with?</h1>
+              </div>
             </div>
-            
-            <InputArea
-              value={input}
-              onChange={setInput}
-              onSubmit={sendMessage}
-              disabled={loading}
-              maxLength={4000}
-              placeholder="Message..."
-            />
-          </div>
+          ) : (
+            <div className="messages-list">
+              {messages.map((msg, i) => (
+                <MessageBubble
+                  key={i}
+                  role={msg.role}
+                  content={msg.content}
+                  metadata={msg.metadata}
+                />
+              ))}
+              {loading && (
+                <div className="message loading">
+                  <div className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Input Area */}
+        <div className="input-section">
+          <InputArea
+            value={input}
+            onChange={setInput}
+            onSubmit={sendMessage}
+            disabled={loading}
+            maxLength={4000}
+            placeholder="Ask anything..."
+          />
         </div>
       </div>
     </div>
