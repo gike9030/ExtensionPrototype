@@ -1,3 +1,7 @@
+using System.Text.Json;
+using Postgrest.Attributes;
+using Postgrest.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
@@ -6,17 +10,54 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
 
-var app = builder.Build();
+builder.Services.AddHttpClient("openrouter", (sp, client) =>
+{
+    var key = sp.GetRequiredService<IConfiguration>()["OpenRouter:ApiKey"]!;
+    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {key}");
+});
 
+builder.Services.AddSingleton(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    return new Supabase.Client(
+        config["Supabase:Url"]!,
+        config["Supabase:ServiceRoleKey"]!
+    );
+});
+
+var app = builder.Build();
 app.UseCors();
 
-app.MapPost("/chat", (ChatRequest req) =>
+var supabase = app.Services.GetRequiredService<Supabase.Client>();
+await supabase.InitializeAsync();
+
+app.MapPost("/chat", async (ChatRequest req, Supabase.Client db) =>
 {
-    // TODO: integrate real AI model here
-    var reply = $"You said: {req.Message}";
-    return Results.Ok(new { reply });
+    var aiText = req.Message;
+
+    await db.From<MessageRecord>().Insert(new MessageRecord
+    {
+        SessionId = req.SessionId ?? Guid.NewGuid().ToString(),
+        UserText = req.Message,
+        AiText = aiText
+    });
+
+    return Results.Ok(new { reply = aiText });
 });
 
 app.Run();
 
-record ChatRequest(string Message);
+record ChatRequest(string Message, string? SessionId);
+
+[Table("messages")]
+public class MessageRecord : BaseModel
+{
+    [Column("session_id")]
+    public string SessionId { get; set; } = default!;
+
+    [Column("user_text")]
+    public string UserText { get; set; } = default!;
+
+    [Column("ai_text")]
+    public string AiText { get; set; } = default!;
+}
