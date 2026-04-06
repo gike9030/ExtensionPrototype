@@ -1,7 +1,13 @@
+using Extension.ApiService.Configuration;
 using Extension.ApiService.Models;
+using Extension.ApiService.Processors;
+using Extension.ApiService.Repositories;
 using Extension.ApiService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var devConfigPath = Path.Combine(builder.Environment.ContentRootPath, "Configuration", "config", "devconfig.yaml");
+builder.Configuration.AddYamlFileIfExists(devConfigPath);
 
 builder.Services.AddCors(options => {
     options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
@@ -17,7 +23,7 @@ builder.Services.AddSingleton(sp => {
     );
 });
 builder.Services.AddSingleton<GeminiChatService>();
-builder.Services.AddSingleton<SupabaseMessageStore>();
+builder.Services.AddSingleton<SupabaseRepository>();
 builder.Services.AddSingleton<ChatProcessor>();
 
 var app = builder.Build();

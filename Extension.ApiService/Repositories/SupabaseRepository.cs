@@ -1,16 +1,9 @@
 using Extension.ApiService.Models;
 
-namespace Extension.ApiService.Services;
+namespace Extension.ApiService.Repositories;
 
-public sealed class SupabaseMessageStore
+public sealed class SupabaseRepository(Supabase.Client client)
 {
-    private readonly Supabase.Client _client;
-
-    public SupabaseMessageStore(Supabase.Client client)
-    {
-        _client = client;
-    }
-
     public async Task SaveAsync(string? sessionId, string userText, string aiText)
     {
         var record = new MessageRecord
@@ -20,6 +13,6 @@ public sealed class SupabaseMessageStore
             AiText = aiText
         };
 
-        await _client.From<MessageRecord>().Insert(record);
+        await client.From<MessageRecord>().Insert(record);
     }
 }

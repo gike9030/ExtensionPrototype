@@ -7,7 +7,7 @@ namespace Extension.ApiService.Models;
 public class MessageRecord : BaseModel
 {
     [PrimaryKey("id", false)]
-    public int Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     [Column("session_id")]
     public string SessionId { get; set; } = string.Empty;
