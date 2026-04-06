@@ -28,13 +28,32 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private _getHtmlForWebview(webview: vscode.Webview): string {
-        const distPath = vscode.Uri.joinPath(this._extensionUri, 'webview-ui', 'dist');
-        const indexPath = path.join(distPath.fsPath, 'index.html');
-        const distUri = webview.asWebviewUri(distPath);
+                const distPath = vscode.Uri.joinPath(this._extensionUri, 'webview-ui', 'dist');
+                const indexPath = path.join(distPath.fsPath, 'index.html');
 
-        let html = fs.readFileSync(indexPath, 'utf8');
-        // Replace relative asset paths with webview URIs
-        html = html.replace(/\.\//g, `${distUri}/`);
-        return html;
+                try {
+                        let html = fs.readFileSync(indexPath, 'utf8');
+                        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(distPath, 'assets', 'index.js')).toString();
+                        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(distPath, 'assets', 'index.css')).toString();
+
+                        html = html.replace(/src="\.\/assets\/index\.js"/g, `src="${scriptUri}"`);
+                        html = html.replace(/href="\.\/assets\/index\.css"/g, `href="${styleUri}"`);
+
+                        return html;
+                } catch (error) {
+                        const message = error instanceof Error ? error.message : String(error);
+                        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Chat</title>
+</head>
+<body>
+    <h3>Failed to load webview UI</h3>
+    <p>${message}</p>
+</body>
+</html>`;
+                }
     }
 }

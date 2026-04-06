@@ -1,6 +1,7 @@
 # Secrets - never commit these
 appsettings.Development.json
 appsettings.Local.json
+Extension.ApiService/Configuration/config/devconfig.yaml
 
 # .NET
 bin/
