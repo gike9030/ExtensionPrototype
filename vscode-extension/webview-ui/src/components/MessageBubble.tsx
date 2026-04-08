@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import './MessageBubble.css'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -8,16 +9,39 @@ interface MessageBubbleProps {
   role: 'user' | 'assistant'
   content: string
   metadata?: string
+  steps?: string[]
 }
 
 export function MessageBubble({
   role,
   content,
   metadata,
+  steps,
 }: MessageBubbleProps) {
+  const [stepsOpen, setStepsOpen] = useState(false)
+
   return (
     <div className={`message ${role}`}>
       {metadata && <div className="message-metadata">{metadata}</div>}
+      {steps && steps.length > 0 && role === 'assistant' && (
+        <div className="steps-section">
+          <button
+            className="steps-toggle"
+            onClick={() => setStepsOpen(p => !p)}
+          >
+            <span className="steps-toggle-icon">✓</span>
+            <span>{steps.length} step{steps.length !== 1 ? 's' : ''}</span>
+            <span className={`steps-chevron${stepsOpen ? ' open' : ''}`}>›</span>
+          </button>
+          {stepsOpen && (
+            <div className="steps-chips">
+              {steps.map((s, i) => (
+                <span key={i} className="step-chip">✓ {s}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <div className="message-content markdown-content">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
