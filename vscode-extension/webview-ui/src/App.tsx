@@ -265,20 +265,24 @@ function App() {
         const text = input.trim()
         if (!text || loading) return
 
-        // Create conversation if none active
         let convId = activeConversationId
+        const userMessage: Message = { role: 'user', content: text }
+        const updatedMessages = [...messages, userMessage]
+
         if (!convId) {
             convId = Date.now().toString()
             const newConv: Conversation = {
                 id: convId,
-                title: 'New Conversation',
+                title: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
                 timestamp: Date.now(),
-                messages: [],
+                messages: [userMessage],
                 pinned: false,
                 folderId: null,
             }
             setConversations(prev => [newConv, ...prev])
             setActiveConversationId(convId)
+        } else {
+            setMessages(updatedMessages)
         }
 
         setSessionsExpanded(false)
@@ -293,9 +297,6 @@ function App() {
             fullMessage = `${contextBlock}\n\nUser question: ${text}`
         }
 
-        const userMessage: Message = { role: 'user', content: text }
-        const updatedMessages = [...messages, userMessage]
-        setMessages(updatedMessages)
         setInput('')
         setLoading(true)
 
@@ -351,6 +352,12 @@ function App() {
             setExecSteps([])
         }
     }
+
+    // ── Apply code to editor ───────────────────────────────────────
+
+    const handleApplyCode = useCallback((code: string) => {
+        vscodeApi?.postMessage({ command: 'applyCode', data: code })
+    }, [])
 
     // ── Layout actions ─────────────────────────────────────────────
 
@@ -459,6 +466,7 @@ function App() {
                                         content={msg.content}
                                         metadata={msg.metadata}
                                         steps={msg.steps}
+                                        onApplyCode={handleApplyCode}
                                     />
                                 ))}
                                 {loading && (

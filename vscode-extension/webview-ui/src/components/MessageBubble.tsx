@@ -10,6 +10,7 @@ interface MessageBubbleProps {
   content: string
   metadata?: string
   steps?: string[]
+  onApplyCode?: (code: string) => void
 }
 
 export function MessageBubble({
@@ -17,6 +18,7 @@ export function MessageBubble({
   content,
   metadata,
   steps,
+  onApplyCode,
 }: MessageBubbleProps) {
   const [stepsOpen, setStepsOpen] = useState(false)
 
@@ -60,7 +62,11 @@ export function MessageBubble({
               }
 
               return (
-                <CodeBlock language={language} code={codeString} />
+                <CodeBlock
+                  language={language}
+                  code={codeString}
+                  onApplyCode={role === 'assistant' ? onApplyCode : undefined}
+                />
               )
             },
           }}

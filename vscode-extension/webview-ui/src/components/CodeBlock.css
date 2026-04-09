@@ -26,6 +26,35 @@
   letter-spacing: 0.5px;
 }
 
+.code-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.code-apply-btn {
+  background: transparent;
+  border: 1px solid var(--vscode-input-border, #555);
+  color: var(--vscode-terminal-ansiGreen, #4ec994);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: all 0.15s;
+  font-weight: 500;
+}
+
+.code-apply-btn:hover {
+  background: rgba(78, 201, 148, 0.1);
+  border-color: var(--vscode-terminal-ansiGreen, #4ec994);
+}
+
+.code-apply-btn.applied {
+  color: var(--vscode-terminal-ansiGreen, #4ec994);
+  border-color: var(--vscode-terminal-ansiGreen, #4ec994);
+  background: rgba(78, 201, 148, 0.15);
+}
+
 .code-copy-btn {
   background: transparent;
   border: 1px solid var(--vscode-input-border, #555);

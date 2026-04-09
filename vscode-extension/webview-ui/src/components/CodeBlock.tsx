@@ -1,18 +1,19 @@
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { dark, coy } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import './CodeBlock.css'
 import { useState } from 'react'
 
 interface CodeBlockProps {
   code: string
   language?: string
+  onApplyCode?: (code: string) => void
 }
 
-export function CodeBlock({ code, language = 'plaintext' }: CodeBlockProps) {
+export function CodeBlock({ code, language = 'plaintext', onApplyCode }: CodeBlockProps) {
   const [copied, setCopied] = useState(false)
+  const [applied, setApplied] = useState(false)
 
-  // Detect theme from VS Code CSS variables (dark mode)
-  const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+  const isDarkMode = !document.body.classList.contains('vscode-light')
 
   const handleCopy = async () => {
     try {
@@ -24,21 +25,38 @@ export function CodeBlock({ code, language = 'plaintext' }: CodeBlockProps) {
     }
   }
 
+  const handleApply = () => {
+    onApplyCode?.(code)
+    setApplied(true)
+    setTimeout(() => setApplied(false), 2000)
+  }
+
   return (
     <div className="code-block">
       <div className="code-header">
         <span className="code-language">{language}</span>
-        <button
-          className="code-copy-btn"
-          onClick={handleCopy}
-          title={copied ? 'Copied!' : 'Copy code'}
-        >
-          {copied ? '✓ Copied' : '📋 Copy'}
-        </button>
+        <div className="code-actions">
+          {onApplyCode && (
+            <button
+              className={`code-apply-btn${applied ? ' applied' : ''}`}
+              onClick={handleApply}
+              title="Apply to active editor"
+            >
+              {applied ? '✓ Applied' : '↙ Apply'}
+            </button>
+          )}
+          <button
+            className="code-copy-btn"
+            onClick={handleCopy}
+            title={copied ? 'Copied!' : 'Copy code'}
+          >
+            {copied ? '✓ Copied' : '📋 Copy'}
+          </button>
+        </div>
       </div>
       <SyntaxHighlighter
         language={language}
-        style={isDarkMode ? dark : coy}
+        style={isDarkMode ? vscDarkPlus : vs}
         className="code-content"
         showLineNumbers={code.split('\n').length > 5}
         wrapLines={true}

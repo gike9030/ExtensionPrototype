@@ -85,6 +85,25 @@ function handleMessage(msg: { command: string; data?: string }) {
             openFloatingPanel('window');
             break;
 
+        case 'applyCode': {
+            const code = msg.data;
+            if (!code) break;
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                vscode.window.showWarningMessage('Open a file in the editor first.');
+                break;
+            }
+            void editor.edit(editBuilder => {
+                const selection = editor.selection;
+                if (selection.isEmpty) {
+                    editBuilder.insert(selection.active, code);
+                } else {
+                    editBuilder.replace(selection, code);
+                }
+            });
+            break;
+        }
+
         case 'getWorkspaceFiles':
             vscode.workspace.findFiles(
                 '**/*.{ts,tsx,js,jsx,cs,py,json,md,html,css,yaml,yml,txt}',
