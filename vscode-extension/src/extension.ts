@@ -8,6 +8,16 @@ let floatingPanel: vscode.WebviewPanel | undefined;
 let extUri: vscode.Uri;
 let extContext: vscode.ExtensionContext;
 
+function broadcastActiveFile(editor: vscode.TextEditor | undefined) {
+    if (!editor) return;
+    const fileName = path.basename(editor.document.fileName);
+    const filePath = editor.document.fileName;
+    const content = editor.document.getText();
+    const msg = { command: 'activeFileChanged', name: fileName, path: filePath, content };
+    sidebarView?.webview.postMessage(msg);
+    floatingPanel?.webview.postMessage(msg);
+}
+
 export function activate(context: vscode.ExtensionContext) {
     extContext = context;
     extUri = context.extensionUri;
@@ -16,6 +26,11 @@ export function activate(context: vscode.ExtensionContext) {
     const provider = new ChatViewProvider(context.extensionUri);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(ChatViewProvider.viewType, provider)
+    );
+
+    // Broadcast active editor changes to all open webviews
+    context.subscriptions.push(
+        vscode.window.onDidChangeActiveTextEditor(editor => broadcastActiveFile(editor))
     );
 }
 
@@ -69,6 +84,33 @@ function handleMessage(msg: { command: string; data?: string }) {
         case 'moveToNewWindow':
             openFloatingPanel('window');
             break;
+
+        case 'getWorkspaceFiles':
+            vscode.workspace.findFiles(
+                '**/*.{ts,tsx,js,jsx,cs,py,json,md,html,css,yaml,yml,txt}',
+                '**/node_modules/**',
+                60
+            ).then(files => {
+                const fileList = files.map(f => ({ name: path.basename(f.fsPath), path: f.fsPath }));
+                const response = { command: 'workspaceFiles', files: fileList };
+                sidebarView?.webview.postMessage(response);
+                floatingPanel?.webview.postMessage(response);
+            });
+            break;
+
+        case 'getFileContent': {
+            const filePath = msg.data;
+            if (filePath) {
+                try {
+                    const content = fs.readFileSync(filePath, 'utf8');
+                    const name = path.basename(filePath);
+                    const response = { command: 'fileContent', name, path: filePath, content };
+                    sidebarView?.webview.postMessage(response);
+                    floatingPanel?.webview.postMessage(response);
+                } catch { /* ignore unreadable files */ }
+            }
+            break;
+        }
 
         case 'moveToSidebar':
             if (floatingPanel) {
@@ -142,8 +184,9 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 
         webviewView.webview.html = buildHtml(webviewView.webview, 'sidebar');
         webviewView.webview.onDidReceiveMessage(handleMessage);
-        webviewView.onDidDispose(() => {
-            sidebarView = undefined;
-        });
+        webviewView.onDidDispose(() => { sidebarView = undefined; });
+
+        // Send currently active file on load
+        void Promise.resolve().then(() => broadcastActiveFile(vscode.window.activeTextEditor));
     }
 }

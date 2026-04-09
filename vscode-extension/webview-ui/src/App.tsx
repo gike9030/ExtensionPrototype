@@ -19,6 +19,12 @@ const vscodeApi = (() => {
 
 type LayoutMode = 'sidebar' | 'editor' | 'window'
 
+interface ContextFile {
+    name: string
+    path: string
+    content: string
+}
+
 interface Message {
     role: 'user' | 'assistant'
     content: string
@@ -91,6 +97,10 @@ function App() {
     const [execExpanded, setExecExpanded] = useState(true)
     const execTimers = useRef<ReturnType<typeof setTimeout>[]>([])
     const plannedSteps = useRef<string[]>([])
+    const [activeFile, setActiveFile] = useState<ContextFile | null>(null)
+    const [contextFiles, setContextFiles] = useState<ContextFile[]>([])
+    const [workspaceFiles, setWorkspaceFiles] = useState<Array<{ name: string; path: string }>>([])
+
     const [sessionsExpanded, setSessionsExpanded] = useState(false)
     const [layoutMode, setLayoutMode] = useState<LayoutMode>(
         ((window as unknown as { __LAYOUT_MODE__?: string }).__LAYOUT_MODE__ as LayoutMode) ?? 'sidebar'
@@ -107,9 +117,13 @@ function App() {
         vscodeApi?.postMessage({ command: 'saveState', data: JSON.stringify(state) })
     }, [conversations, folders])
 
-    // Listen for restoreState from extension host (when returning to sidebar)
+    // Listen for messages from extension host
     useEffect(() => {
-        const handler = (event: MessageEvent<{ command: string; data?: string; mode?: LayoutMode }>) => {
+        const handler = (event: MessageEvent<{
+            command: string; data?: string; mode?: LayoutMode;
+            name?: string; path?: string; content?: string;
+            files?: Array<{ name: string; path: string }>;
+        }>) => {
             const msg = event.data
             if (msg.command === 'restoreState' && msg.data) {
                 const restored = parseAppState(msg.data)
@@ -121,6 +135,16 @@ function App() {
             }
             if (msg.command === 'setMode' && msg.mode) {
                 setLayoutMode(msg.mode)
+            }
+            if (msg.command === 'activeFileChanged' && msg.name && msg.path && msg.content !== undefined) {
+                setActiveFile({ name: msg.name, path: msg.path, content: msg.content })
+            }
+            if (msg.command === 'workspaceFiles' && msg.files) {
+                setWorkspaceFiles(msg.files)
+            }
+            if (msg.command === 'fileContent' && msg.name && msg.path && msg.content !== undefined) {
+                const file: ContextFile = { name: msg.name, path: msg.path, content: msg.content }
+                setContextFiles(prev => prev.find(f => f.path === msg.path) ? prev : [...prev, file])
             }
         }
         window.addEventListener('message', handler)
@@ -218,6 +242,23 @@ function App() {
         )
     }
 
+    // ── File context handlers ──────────────────────────────────────
+
+    const handleHashTyped = useCallback(() => {
+        if (workspaceFiles.length === 0) {
+            vscodeApi?.postMessage({ command: 'getWorkspaceFiles' })
+        }
+    }, [workspaceFiles.length])
+
+    const handleSelectFile = useCallback((file: { name: string; path: string }) => {
+        if (contextFiles.find(f => f.path === file.path)) return
+        vscodeApi?.postMessage({ command: 'getFileContent', data: file.path })
+    }, [contextFiles])
+
+    const handleRemoveContext = useCallback((filePath: string) => {
+        setContextFiles(prev => prev.filter(f => f.path !== filePath))
+    }, [])
+
     // ── Send message ───────────────────────────────────────────────
 
     const sendMessage = async () => {
@@ -242,6 +283,16 @@ function App() {
 
         setSessionsExpanded(false)
 
+        // Build context-enriched message for the AI (user sees only `text`)
+        const allContext = activeFile ? [activeFile, ...contextFiles] : contextFiles
+        let fullMessage = text
+        if (allContext.length > 0) {
+            const contextBlock = allContext
+                .map(f => `[File: ${f.name}]\n\`\`\`\n${f.content.slice(0, 3000)}\n\`\`\``)
+                .join('\n\n')
+            fullMessage = `${contextBlock}\n\nUser question: ${text}`
+        }
+
         const userMessage: Message = { role: 'user', content: text }
         const updatedMessages = [...messages, userMessage]
         setMessages(updatedMessages)
@@ -264,7 +315,7 @@ function App() {
             const res = await fetch(`${API_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text }),
+                body: JSON.stringify({ message: fullMessage }),
             })
             const data = await res.json()
             const assistantMessage: Message = {
@@ -432,6 +483,12 @@ function App() {
                         disabled={loading}
                         maxLength={4000}
                         placeholder="Ask anything..."
+                        activeFile={activeFile?.name ?? null}
+                        contextFiles={contextFiles.map(f => ({ name: f.name, path: f.path }))}
+                        onRemoveContext={handleRemoveContext}
+                        workspaceFiles={workspaceFiles}
+                        onSelectFile={handleSelectFile}
+                        onHashTyped={handleHashTyped}
                     />
                 </div>
             </div>
