@@ -11,6 +11,9 @@ interface MessageBubbleProps {
   metadata?: string
   steps?: string[]
   onApplyCode?: (code: string) => void
+  onPreviewCode?: (code: string) => void
+  onAcceptPreview?: () => void
+  onRejectPreview?: () => void
 }
 
 export function MessageBubble({
@@ -19,6 +22,9 @@ export function MessageBubble({
   metadata,
   steps,
   onApplyCode,
+  onPreviewCode,
+  onAcceptPreview,
+  onRejectPreview,
 }: MessageBubbleProps) {
   const [stepsOpen, setStepsOpen] = useState(false)
 
@@ -66,6 +72,9 @@ export function MessageBubble({
                   language={language}
                   code={codeString}
                   onApplyCode={role === 'assistant' ? onApplyCode : undefined}
+                  onPreviewCode={role === 'assistant' ? onPreviewCode : undefined}
+                  onAcceptPreview={role === 'assistant' ? onAcceptPreview : undefined}
+                  onRejectPreview={role === 'assistant' ? onRejectPreview : undefined}
                 />
               )
             },

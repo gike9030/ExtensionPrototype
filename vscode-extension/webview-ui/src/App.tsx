@@ -359,6 +359,18 @@ function App() {
         vscodeApi?.postMessage({ command: 'applyCode', data: code })
     }, [])
 
+    const handlePreviewCode = useCallback((code: string) => {
+        vscodeApi?.postMessage({ command: 'previewCode', data: code })
+    }, [])
+
+    const handleAcceptPreview = useCallback(() => {
+        vscodeApi?.postMessage({ command: 'acceptPreview' })
+    }, [])
+
+    const handleRejectPreview = useCallback(() => {
+        vscodeApi?.postMessage({ command: 'rejectPreview' })
+    }, [])
+
     // ── Layout actions ─────────────────────────────────────────────
 
     const handleMoveToEditor = () => {
@@ -467,6 +479,9 @@ function App() {
                                         metadata={msg.metadata}
                                         steps={msg.steps}
                                         onApplyCode={handleApplyCode}
+                                        onPreviewCode={handlePreviewCode}
+                                        onAcceptPreview={handleAcceptPreview}
+                                        onRejectPreview={handleRejectPreview}
                                     />
                                 ))}
                                 {loading && (

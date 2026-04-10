@@ -27,7 +27,38 @@
           "name": "Chat"
         }
       ]
-    }
+    },
+    "commands": [
+      {
+        "command": "aiChat.acceptNextLine",
+        "title": "AI Chat: Accept Next Line"
+      },
+      {
+        "command": "aiChat.acceptAll",
+        "title": "AI Chat: Accept All"
+      },
+      {
+        "command": "aiChat.rejectPreview",
+        "title": "AI Chat: Reject Preview"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "aiChat.acceptNextLine",
+        "key": "alt+enter",
+        "when": "aiChatPreviewActive && editorTextFocus"
+      },
+      {
+        "command": "aiChat.acceptAll",
+        "key": "tab",
+        "when": "aiChatPreviewActive && editorTextFocus"
+      },
+      {
+        "command": "aiChat.rejectPreview",
+        "key": "escape",
+        "when": "aiChatPreviewActive && editorTextFocus"
+      }
+    ]
   },
   "scripts": {
     "compile": "tsc -p ./",
