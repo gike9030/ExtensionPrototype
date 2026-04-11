@@ -81,6 +81,10 @@ body {
   position: relative;
 }
 
+.chat-container.sessions-expanded {
+  /* When sessions expanded, chat panel (header) appears first */
+}
+
 .messages-area {
   flex: 1;
   overflow-y: auto;

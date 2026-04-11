@@ -25,6 +25,10 @@ interface ContextFile {
     content: string
 }
 
+interface ActiveFile extends ContextFile {
+    included: boolean
+}
+
 interface Message {
     role: 'user' | 'assistant'
     content: string
@@ -97,11 +101,11 @@ function App() {
     const [execExpanded, setExecExpanded] = useState(true)
     const execTimers = useRef<ReturnType<typeof setTimeout>[]>([])
     const plannedSteps = useRef<string[]>([])
-    const [activeFile, setActiveFile] = useState<ContextFile | null>(null)
+    const [activeFile, setActiveFile] = useState<ActiveFile | null>(null)
     const [contextFiles, setContextFiles] = useState<ContextFile[]>([])
     const [workspaceFiles, setWorkspaceFiles] = useState<Array<{ name: string; path: string }>>([])
 
-    const [sessionsExpanded, setSessionsExpanded] = useState(false)
+    const [sessionsExpanded, setSessionsExpanded] = useState(initialState.conversations.length > 0)
     const [layoutMode, setLayoutMode] = useState<LayoutMode>(
         ((window as unknown as { __LAYOUT_MODE__?: string }).__LAYOUT_MODE__ as LayoutMode) ?? 'sidebar'
     )
@@ -137,7 +141,7 @@ function App() {
                 setLayoutMode(msg.mode)
             }
             if (msg.command === 'activeFileChanged' && msg.name && msg.path && msg.content !== undefined) {
-                setActiveFile({ name: msg.name, path: msg.path, content: msg.content })
+                setActiveFile({ name: msg.name, path: msg.path, content: msg.content, included: false })
             }
             if (msg.command === 'workspaceFiles' && msg.files) {
                 setWorkspaceFiles(msg.files)
@@ -259,6 +263,10 @@ function App() {
         setContextFiles(prev => prev.filter(f => f.path !== filePath))
     }, [])
 
+    const handleToggleActiveFile = useCallback(() => {
+        setActiveFile(prev => prev ? { ...prev, included: !prev.included } : prev)
+    }, [])
+
     // ── Send message ───────────────────────────────────────────────
 
     const sendMessage = async () => {
@@ -288,7 +296,7 @@ function App() {
         setSessionsExpanded(false)
 
         // Build context-enriched message for the AI (user sees only `text`)
-        const allContext = activeFile ? [activeFile, ...contextFiles] : contextFiles
+        const allContext = activeFile?.included ? [activeFile, ...contextFiles] : contextFiles
         let fullMessage = text
         if (allContext.length > 0) {
             const contextBlock = allContext
@@ -394,74 +402,75 @@ function App() {
     return (
         <div className={`app layout-${layoutMode}`}>
             {/* Header */}
-            <div className="header">
-                <div className="header-left">
-                    {layoutMode !== 'sidebar' && (
-                        <button className="back-btn" title="Back to sidebar" onClick={handleMoveToSidebar}>
-                            ←
-                        </button>
-                    )}
-                    <h2 className="header-title">
-                        {activeConversationId ? activeTitle : 'Chat'}
-                    </h2>
-                </div>
-
-                <div className="header-right">
-                    <button
-                        className="header-btn"
-                        title="New conversation"
-                        onClick={() => {
-                            createNewConversation()
-                            setSessionsExpanded(false)
-                        }}
-                    >
-                        +
-                    </button>
-                    <button className="header-btn" title="Settings">⚙</button>
-
-                    {/* Layout menu */}
-                    <div className="layout-menu-container" ref={layoutMenuRef}>
-                        <button
-                            className={`header-btn${showLayoutMenu ? ' active' : ''}`}
-                            title="Panel layout"
-                            onClick={() => setShowLayoutMenu(p => !p)}
-                        >
-                            ⊞
-                        </button>
-                        {showLayoutMenu && (
-                            <div className="layout-dropdown">
-                                <button className="dropdown-item" onClick={handleMoveToEditor}>
-                                    Move Chat Into Editor Area
-                                </button>
-                                <button className="dropdown-item" onClick={handleMoveToWindow}>
-                                    Move Chat Into New Window
-                                </button>
-                            </div>
+            <div className={`chat-container${sessionsExpanded ? ' sessions-expanded' : ''}`}>
+                <div className="header" style={{ order: sessionsExpanded ? 0 : 2 }}>
+                    <div className="header-left">
+                        {layoutMode !== 'sidebar' && (
+                            <button className="back-btn" title="Back to sidebar" onClick={handleMoveToSidebar}>
+                                ←
+                            </button>
                         )}
+                        <h2 className="header-title">
+                            {activeConversationId ? activeTitle : 'Chat'}
+                        </h2>
+                    </div>
+
+                    <div className="header-right">
+                        <button
+                            className="header-btn"
+                            title="New conversation"
+                            onClick={() => {
+                                createNewConversation()
+                                setSessionsExpanded(false)
+                            }}
+                        >
+                            +
+                        </button>
+                        <button className="header-btn" title="Settings">⚙</button>
+
+                        {/* Layout menu */}
+                        <div className="layout-menu-container" ref={layoutMenuRef}>
+                            <button
+                                className={`header-btn${showLayoutMenu ? ' active' : ''}`}
+                                title="Panel layout"
+                                onClick={() => setShowLayoutMenu(p => !p)}
+                            >
+                                ⊞
+                            </button>
+                            {showLayoutMenu && (
+                                <div className="layout-dropdown">
+                                    <button className="dropdown-item" onClick={handleMoveToEditor}>
+                                        Move Chat Into Editor Area
+                                    </button>
+                                    <button className="dropdown-item" onClick={handleMoveToWindow}>
+                                        Move Chat Into New Window
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Main content */}
-            <div className="chat-container">
                 {/* Sessions collapsible panel — always rendered, shows/hides list */}
-                <SessionsPanel
-                    conversations={conversations}
-                    folders={folders}
-                    isExpanded={sessionsExpanded}
-                    onToggle={() => setSessionsExpanded(p => !p)}
-                    onSelectSession={handleSelectSession}
-                    onRenameSession={handleRenameSession}
-                    onDeleteSession={handleDeleteSession}
-                    onTogglePin={handleTogglePin}
-                    onAddToFolder={handleAddToFolder}
-                    onCreateFolder={handleCreateFolder}
-                    onToggleFolderExpand={handleToggleFolderExpand}
-                />
+                <div style={{ order: sessionsExpanded ? 1 : 1 }}>
+                    <SessionsPanel
+                        conversations={conversations}
+                        folders={folders}
+                        isExpanded={sessionsExpanded}
+                        onToggle={() => setSessionsExpanded(p => !p)}
+                        onSelectSession={handleSelectSession}
+                        onRenameSession={handleRenameSession}
+                        onDeleteSession={handleDeleteSession}
+                        onTogglePin={handleTogglePin}
+                        onAddToFolder={handleAddToFolder}
+                        onCreateFolder={handleCreateFolder}
+                        onToggleFolderExpand={handleToggleFolderExpand}
+                    />
+                </div>
 
                 {/* Chat area — hidden when sessions is expanded */}
                 {!sessionsExpanded && (
-                    <div className="messages-area">
+                    <div className="messages-area" style={{ order: 3 }}>
                         {messages.length === 0 ? (
                             <div className="welcome-message">
                                 <div className="welcome-content">
@@ -497,23 +506,27 @@ function App() {
                     </div>
                 )}
 
-                {/* Input always visible */}
-                <div className="input-section">
-                    <InputArea
-                        value={input}
-                        onChange={setInput}
-                        onSubmit={sendMessage}
-                        disabled={loading}
-                        maxLength={4000}
-                        placeholder="Ask anything..."
-                        activeFile={activeFile?.name ?? null}
-                        contextFiles={contextFiles.map(f => ({ name: f.name, path: f.path }))}
-                        onRemoveContext={handleRemoveContext}
-                        workspaceFiles={workspaceFiles}
-                        onSelectFile={handleSelectFile}
-                        onHashTyped={handleHashTyped}
-                    />
-                </div>
+                {/* Input hidden when sessions expanded */}
+                {!sessionsExpanded && (
+                    <div className="input-section" style={{ order: 4 }}>
+                        <InputArea
+                            value={input}
+                            onChange={setInput}
+                            onSubmit={sendMessage}
+                            disabled={loading}
+                            maxLength={4000}
+                            placeholder="Ask anything..."
+                            activeFile={activeFile?.name ?? null}
+                            activeFileIncluded={activeFile?.included ?? false}
+                            onToggleActiveFile={handleToggleActiveFile}
+                            contextFiles={contextFiles.map(f => ({ name: f.name, path: f.path }))}
+                            onRemoveContext={handleRemoveContext}
+                            workspaceFiles={workspaceFiles}
+                            onSelectFile={handleSelectFile}
+                            onHashTyped={handleHashTyped}
+                        />
+                    </div>
+                )}
             </div>
         </div>
     )

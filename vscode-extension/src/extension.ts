@@ -235,14 +235,10 @@ function handleMessage(msg: { command: string; data?: string }) {
                 floatingPanel.dispose();
                 floatingPanel = undefined;
             }
-            // Reveal the sidebar panel and restore its state
-            vscode.commands.executeCommand('aiChatPanel.focus').then(() => {
-                if (sidebarView) {
-                    sidebarView.webview.postMessage({
-                        command: 'restoreState',
-                        data: savedConversations,
-                    });
-                }
+            sidebarView?.show(false);
+            sidebarView?.webview.postMessage({
+                command: 'restoreState',
+                data: savedConversations,
             });
             break;
     }
@@ -252,10 +248,8 @@ function openFloatingPanel(mode: 'editor' | 'window') {
     if (floatingPanel) {
         floatingPanel.reveal();
         if (mode === 'window') {
-            setTimeout(
-                () => vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow'),
-                200
-            );
+            floatingPanel.reveal(vscode.ViewColumn.Active);
+            setTimeout(() => vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow'), 50);
         }
         return;
     }
@@ -278,10 +272,8 @@ function openFloatingPanel(mode: 'editor' | 'window') {
     });
 
     if (mode === 'window') {
-        setTimeout(
-            () => vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow'),
-            400
-        );
+        floatingPanel.reveal(vscode.ViewColumn.Active);
+        setTimeout(() => vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow'), 50);
     }
 }
 
