@@ -2,6 +2,7 @@
 appsettings.Development.json
 appsettings.Local.json
 Extension.ApiService/Configuration/config/devconfig.yaml
+.claude/
 
 # .NET
 bin/
