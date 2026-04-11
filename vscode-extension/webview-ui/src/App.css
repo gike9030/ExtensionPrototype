@@ -106,10 +106,16 @@ body {
 }
 
 .welcome-content h1 {
-  margin: 0;
+  margin: 0 0 6px;
   font-size: 20px;
   font-weight: 400;
   color: var(--vscode-foreground, #d4d4d4);
+}
+
+.welcome-content p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--vscode-descriptionForeground, #858585);
 }
 
 /* ========== MESSAGE STYLES ========== */
@@ -131,8 +137,6 @@ body {
 .message.user .message-content {
   background: transparent;
   padding: 0;
-  border-left: 3px solid var(--vscode-textLink-foreground, #9cdcfe);
-  padding-left: 12px;
   color: var(--vscode-foreground, #d4d4d4);
 }
 
@@ -190,6 +194,55 @@ body {
   padding: 16px 20px;
   background: var(--vscode-editor-background, #1e1e1e);
   flex-shrink: 0;
+}
+
+/* ========== LAYOUT MENU ========== */
+.layout-menu-container {
+  position: relative;
+}
+
+.layout-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--vscode-menu-background, #2d2d30);
+  border: 1px solid var(--vscode-menu-border, #454545);
+  border-radius: 4px;
+  min-width: 210px;
+  z-index: 200;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  color: var(--vscode-menu-foreground, #d4d4d4);
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.dropdown-item:hover {
+  background: var(--vscode-menu-selectionBackground, #0e639c);
+  color: var(--vscode-menu-selectionForeground, #ffffff);
+}
+
+.header-btn.active {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
+  border-radius: 3px;
+}
+
+/* Editor / window mode — subtle top border indicator */
+.layout-editor .header,
+.layout-window .header {
+  border-top: 2px solid var(--vscode-focusBorder, #007acc);
 }
 
 /* ========== SCROLLBAR ========== */

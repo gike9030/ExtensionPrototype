@@ -26,6 +26,90 @@
   letter-spacing: 0.5px;
 }
 
+.code-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.code-preview-btn {
+  background: transparent;
+  border: 1px solid var(--vscode-input-border, #555);
+  color: var(--vscode-focusBorder, #007acc);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: all 0.15s;
+  font-weight: 500;
+}
+
+.code-preview-btn:hover {
+  background: rgba(0, 122, 204, 0.1);
+  border-color: var(--vscode-focusBorder, #007acc);
+}
+
+.code-preview-btn.previewed {
+  color: var(--vscode-focusBorder, #007acc);
+  border-color: var(--vscode-focusBorder, #007acc);
+  background: rgba(0, 122, 204, 0.15);
+}
+
+.code-apply-btn {
+  background: transparent;
+  border: 1px solid var(--vscode-input-border, #555);
+  color: var(--vscode-terminal-ansiGreen, #4ec994);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: all 0.15s;
+  font-weight: 500;
+}
+
+.code-apply-btn:hover {
+  background: rgba(78, 201, 148, 0.1);
+  border-color: var(--vscode-terminal-ansiGreen, #4ec994);
+}
+
+.code-apply-btn.applied {
+  color: var(--vscode-terminal-ansiGreen, #4ec994);
+  border-color: var(--vscode-terminal-ansiGreen, #4ec994);
+  background: rgba(78, 201, 148, 0.15);
+}
+
+.code-accept-btn {
+  background: transparent;
+  border: 1px solid var(--vscode-terminal-ansiGreen, #4ec994);
+  color: var(--vscode-terminal-ansiGreen, #4ec994);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: all 0.15s;
+  font-weight: 600;
+}
+
+.code-accept-btn:hover {
+  background: rgba(78, 201, 148, 0.15);
+}
+
+.code-reject-btn {
+  background: transparent;
+  border: 1px solid var(--vscode-terminal-ansiRed, #f48771);
+  color: var(--vscode-terminal-ansiRed, #f48771);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: all 0.15s;
+  font-weight: 600;
+}
+
+.code-reject-btn:hover {
+  background: rgba(244, 135, 113, 0.15);
+}
+
 .code-copy-btn {
   background: transparent;
   border: 1px solid var(--vscode-input-border, #555);

@@ -1,0 +1,112 @@
+.executing-panel {
+    margin: 4px 0;
+    border: 1px solid var(--vscode-sideBar-border, #3e3e42);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--vscode-input-background, #3c3c3c);
+}
+
+/* Header row */
+.executing-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 12px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--vscode-foreground, #d4d4d4);
+}
+
+.executing-header:hover {
+    background: var(--vscode-list-hoverBackground, #2a2d2e);
+}
+
+/* Animated spinner dot */
+.executing-spinner {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--vscode-textLink-foreground, #3794ff);
+    flex-shrink: 0;
+    animation: pulse-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.75); }
+}
+
+.executing-label {
+    flex: 1;
+    font-size: 13px;
+    color: var(--vscode-foreground, #d4d4d4);
+}
+
+.executing-chevron {
+    font-size: 14px;
+    color: var(--vscode-descriptionForeground, #858585);
+    transition: transform 0.15s;
+    display: inline-block;
+    line-height: 1;
+}
+
+.executing-chevron.open {
+    transform: rotate(90deg);
+}
+
+/* Steps list */
+.executing-steps {
+    padding: 4px 12px 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-top: 1px solid var(--vscode-sideBar-border, #3e3e42);
+}
+
+.exec-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    padding: 2px 0;
+}
+
+.exec-step.done {
+    color: var(--vscode-descriptionForeground, #858585);
+}
+
+.exec-step.current {
+    color: var(--vscode-foreground, #d4d4d4);
+}
+
+.exec-step-icon {
+    font-size: 11px;
+    width: 14px;
+    flex-shrink: 0;
+    color: var(--vscode-terminal-ansiGreen, #4ec994);
+}
+
+.exec-step.current .exec-step-icon::after {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border: 1.5px solid var(--vscode-textLink-foreground, #3794ff);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.exec-step-text {
+    font-family: var(--vscode-editor-font-family, 'Consolas', monospace);
+    font-size: 12px;
+}

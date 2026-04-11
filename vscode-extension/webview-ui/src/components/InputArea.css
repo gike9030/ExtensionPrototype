@@ -1,28 +1,132 @@
 .input-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   background: var(--vscode-editor-background, #1e1e1e);
+  position: relative;
 }
 
-/* File Context */
+/* ── File context chips ── */
 .file-context {
   padding: 0 4px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
   min-height: 20px;
-  font-size: 12px;
 }
 
 .file-badge {
-  background: var(--vscode-list-hoverBackground, #2d2d30);
-  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 2px 6px;
   border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-badge.active-file {
+  background: var(--vscode-list-hoverBackground, #2d2d30);
+  color: var(--vscode-descriptionForeground, #858585);
+  border: 1px solid var(--vscode-input-border, #555);
+}
+
+.file-badge.added-file {
+  background: var(--vscode-editor-selectionBackground, #264f78);
+  color: var(--vscode-editor-foreground, #d4d4d4);
+  border: 1px solid transparent;
+}
+
+.badge-icon {
+  opacity: 0.6;
+  font-size: 10px;
+}
+
+.badge-remove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 0 0 2px;
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+}
+
+.badge-remove:hover {
+  opacity: 1;
+}
+
+/* ── File picker dropdown ── */
+.file-picker {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--vscode-menu-background, #2d2d30);
+  border: 1px solid var(--vscode-menu-border, #454545);
+  border-radius: 4px;
+  z-index: 300;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  max-height: 240px;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-picker-header {
+  padding: 6px 12px 4px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, #858585);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--vscode-input-border, #555);
+  flex-shrink: 0;
+}
+
+.file-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  background: transparent;
+  border: none;
+  color: var(--vscode-menu-foreground, #d4d4d4);
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-picker-item:hover {
+  background: var(--vscode-menu-selectionBackground, #0e639c);
+  color: var(--vscode-menu-selectionForeground, #ffffff);
+}
+
+.picker-icon {
+  font-size: 11px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.file-picker-empty {
+  padding: 10px 12px;
+  font-size: 12px;
   color: var(--vscode-descriptionForeground, #858585);
 }
 
-/* Input Container */
+/* ── Input container ── */
 .input-container {
   display: flex;
   gap: 8px;
@@ -122,43 +226,17 @@
   cursor: default;
 }
 
-/* Footer Controls */
+/* ── Footer ── */
 .input-footer {
-  display: flex;
-  align-items: center;
-  padding: 0 4px;
-  gap: 8px;
+  padding: 0 4px 2px;
+}
+
+.footer-hint {
   font-size: 11px;
-  border-top: 1px solid var(--vscode-input-border, #555);
+  color: var(--vscode-descriptionForeground, #555);
 }
 
-.footer-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-}
-
-.footer-select {
-  background: transparent;
-  border: none;
-  color: var(--vscode-descriptionForeground, #858585);
-  font-size: 11px;
-  cursor: pointer;
-  padding: 2px 4px;
-  font-family: inherit;
-}
-
-.footer-select:hover {
-  color: var(--vscode-foreground, #d4d4d4);
-}
-
-.control-separator {
-  color: var(--vscode-input-border, #555);
-  font-size: 10px;
-}
-
-/* Scrollbar styling */
+/* Scrollbar */
 .input-textarea::-webkit-scrollbar {
   width: 6px;
 }
