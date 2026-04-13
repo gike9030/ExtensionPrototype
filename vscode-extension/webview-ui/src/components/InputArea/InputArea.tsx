@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import './InputArea.css'
 
+interface FileReference {
+  name: string
+  path: string
+}
+
 interface InputAreaProps {
   value: string
   onChange: (value: string) => void
@@ -11,20 +16,31 @@ interface InputAreaProps {
   activeFile?: string | null
   activeFileIncluded?: boolean
   onToggleActiveFile?: () => void
-  contextFiles?: Array<{ name: string; path: string }>
+  contextFiles?: FileReference[]
   onRemoveContext?: (path: string) => void
-  workspaceFiles?: Array<{ name: string; path: string }>
-  onSelectFile?: (file: { name: string; path: string }) => void
+  workspaceFiles?: FileReference[]
+  onSelectFile?: (file: FileReference) => void
   onHashTyped?: () => void
 }
+
+const TEXTAREA_MAX_HEIGHT = 120
+const DEFAULT_MAX_LENGTH = 4000
+const DEFAULT_PLACEHOLDER = 'Ask anything...'
+const FILE_PICKER_MAX_RESULTS = 8
+const HASH_TRIGGER_PATTERN = /#(\w*)$/
+const FILE_PICKER_TRIGGER = '#'
+const ATTACH_BUTTON_LABEL = '+'
+const FORMATTER_MODES = ['Ask', 'Code', 'Agent']
+const AVAILABLE_MODELS = ['Gemini 2.0', 'Claude 3 Opus', 'GPT-4 Turbo', 'Claude 3 Sonnet']
+const FOOTER_HINT = 'Type # to include a file'
 
 export function InputArea({
   value,
   onChange,
   onSubmit,
   disabled = false,
-  maxLength = 4000,
-  placeholder = 'Ask anything...',
+  maxLength = DEFAULT_MAX_LENGTH,
+  placeholder = DEFAULT_PLACEHOLDER,
   activeFile,
   activeFileIncluded = false,
   onToggleActiveFile,
@@ -38,27 +54,28 @@ export function InputArea({
   const pickerRef = useRef<HTMLDivElement>(null)
   const modeMenuRef = useRef<HTMLDivElement>(null)
   const modelMenuRef = useRef<HTMLDivElement>(null)
+
   const [showFilePicker, setShowFilePicker] = useState(false)
   const [filePickerQuery, setFilePickerQuery] = useState('')
   const [showModeMenu, setShowModeMenu] = useState(false)
-  const [composerMode, setComposerMode] = useState('Ask')
+  const [composerMode, setComposerMode] = useState(FORMATTER_MODES[0])
   const [showModelMenu, setShowModelMenu] = useState(false)
-  const [selectedModel, setSelectedModel] = useState('Gemini 2.0')
+  const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0])
 
-  // Auto-grow textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
-      const newHeight = Math.min(textareaRef.current.scrollHeight, 120)
+      const newHeight = Math.min(textareaRef.current.scrollHeight, TEXTAREA_MAX_HEIGHT)
       textareaRef.current.style.height = `${newHeight}px`
     }
   }, [value])
 
-  // Close picker on outside click
   useEffect(() => {
     if (!showFilePicker && !showModeMenu && !showModelMenu) return
-    const handler = (e: MouseEvent) => {
+
+    const handleOutsideClick = (e: MouseEvent) => {
       const target = e.target as Node
+
       if (pickerRef.current && !pickerRef.current.contains(target)) {
         setShowFilePicker(false)
       }
@@ -69,8 +86,9 @@ export function InputArea({
         setShowModelMenu(false)
       }
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
   }, [showFilePicker, showModeMenu, showModelMenu])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -90,10 +108,10 @@ export function InputArea({
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value
     if (newValue.length > maxLength) return
+
     onChange(newValue)
 
-    // Detect # trigger at end of input
-    const hashMatch = newValue.match(/#(\w*)$/)
+    const hashMatch = newValue.match(HASH_TRIGGER_PATTERN)
     if (hashMatch) {
       const query = hashMatch[1]
       setFilePickerQuery(query)
@@ -104,9 +122,8 @@ export function InputArea({
     }
   }
 
-  const handlePickFile = (file: { name: string; path: string }) => {
-    // Remove the #query from input
-    onChange(value.replace(/#\w*$/, ''))
+  const handlePickFile = (file: FileReference) => {
+    onChange(value.replace(HASH_TRIGGER_PATTERN, ''))
     onSelectFile?.(file)
     setShowFilePicker(false)
     textareaRef.current?.focus()
@@ -114,13 +131,23 @@ export function InputArea({
 
   const filteredFiles = workspaceFiles
     .filter(f => f.name.toLowerCase().includes(filePickerQuery.toLowerCase()))
-    .slice(0, 8)
+    .slice(0, FILE_PICKER_MAX_RESULTS)
 
-  const hasContext = activeFile || contextFiles.length > 0
+  const hasContext = !!activeFile || contextFiles.length > 0
+
+  const toggleFilePicker = () => {
+    onChange(value + FILE_PICKER_TRIGGER)
+    onHashTyped?.()
+    setFilePickerQuery('')
+    setShowFilePicker(true)
+    textareaRef.current?.focus()
+  }
+
+  const toggleModeMenu = () => setShowModeMenu(prev => !prev)
+  const toggleModelMenu = () => setShowModelMenu(prev => !prev)
 
   return (
     <div className="input-wrapper">
-      {/* File context chips — visible when activeFile or explicit files exist */}
       {hasContext && (
         <div className="file-context">
           {activeFile && (
@@ -151,7 +178,6 @@ export function InputArea({
         </div>
       )}
 
-      {/* # File picker dropdown */}
       {showFilePicker && (
         <div className="file-picker" ref={pickerRef}>
           <div className="file-picker-header">Include file</div>
@@ -175,22 +201,15 @@ export function InputArea({
         </div>
       )}
 
-      {/* Input container */}
       <div className="input-container">
         <div className="input-main-row">
           <div className="input-controls-left">
             <button
               className="control-btn"
               title="Attach file (#)"
-              onClick={() => {
-                onChange(value + '#')
-                onHashTyped?.()
-                setFilePickerQuery('')
-                setShowFilePicker(true)
-                textareaRef.current?.focus()
-              }}
+              onClick={toggleFilePicker}
             >
-              +
+              {ATTACH_BUTTON_LABEL}
             </button>
           </div>
 
@@ -224,7 +243,7 @@ export function InputArea({
             <button
               type="button"
               className="composer-mode-button"
-              onClick={() => setShowModeMenu(prev => !prev)}
+              onClick={toggleModeMenu}
               title="Choose mode"
             >
               <span className="composer-mode-label">{composerMode}</span>
@@ -233,7 +252,7 @@ export function InputArea({
 
             {showModeMenu && (
               <div className="composer-mode-menu">
-                {['Ask', 'Code', 'Agent'].map(mode => (
+                {FORMATTER_MODES.map(mode => (
                   <button
                     key={mode}
                     type="button"
@@ -254,7 +273,7 @@ export function InputArea({
             <button
               type="button"
               className="composer-model-button"
-              onClick={() => setShowModelMenu(prev => !prev)}
+              onClick={toggleModelMenu}
               title="Choose model"
             >
               <span className="composer-model-label">{selectedModel}</span>
@@ -263,7 +282,7 @@ export function InputArea({
 
             {showModelMenu && (
               <div className="composer-model-menu">
-                {['Gemini 2.0', 'Claude 3 Opus', 'GPT-4 Turbo', 'Claude 3 Sonnet'].map(model => (
+                {AVAILABLE_MODELS.map(model => (
                   <button
                     key={model}
                     type="button"
@@ -283,7 +302,7 @@ export function InputArea({
       </div>
 
       <div className="input-footer">
-        <span className="footer-hint">Type # to include a file</span>
+        <span className="footer-hint">{FOOTER_HINT}</span>
       </div>
     </div>
   )

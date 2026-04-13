@@ -254,9 +254,10 @@
 .input-bottom-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
   min-height: 34px;
+  padding-left: 4px;
 }
 
 .composer-modes {
@@ -269,7 +270,6 @@
   position: relative;
   display: flex;
   align-items: center;
-  margin-left: auto;
 }
 
 .composer-mode-button,

@@ -32,8 +32,8 @@ app.UseCors();
 
 app.MapPost("/chat", async (ChatRequest request, ChatProcessor chatProcessor, CancellationToken cancellationToken) =>
 {
-    var reply = await chatProcessor.ProcessAsync(request, cancellationToken);
-    return Results.Ok(new { reply });
+    var response = await chatProcessor.ProcessAsync(request, cancellationToken);
+    return Results.Ok(response);
 });
 
 app.Run();

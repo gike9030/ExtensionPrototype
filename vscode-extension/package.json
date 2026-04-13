@@ -30,12 +30,16 @@
     },
     "commands": [
       {
+        "command": "aiChat.acceptOneToken",
+        "title": "AI Extension: Accept One Word/Token"
+      },
+      {
         "command": "aiChat.acceptNextLine",
         "title": "AI Extension: Accept Next Line"
       },
       {
         "command": "aiChat.acceptAll",
-        "title": "AI Extension: Accept All"
+        "title": "AI Extension: Accept Whole Block"
       },
       {
         "command": "aiChat.rejectPreview",
@@ -44,8 +48,13 @@
     ],
     "keybindings": [
       {
+        "command": "aiChat.acceptOneToken",
+        "key": "shift+right",
+        "when": "aiChatPreviewActive && editorTextFocus"
+      },
+      {
         "command": "aiChat.acceptNextLine",
-        "key": "alt+enter",
+        "key": "shift+down",
         "when": "aiChatPreviewActive && editorTextFocus"
       },
       {

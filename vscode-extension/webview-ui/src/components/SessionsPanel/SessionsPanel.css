@@ -2,11 +2,10 @@
 .sessions-panel {
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;  /* collapsed: only toolbar height */
+    flex-shrink: 0;
     overflow: hidden;
 }
 
-/* Expanded state: takes all remaining space */
 .sessions-panel.expanded {
     flex: 1;
     overflow: hidden;
@@ -22,7 +21,6 @@
     flex-shrink: 0;
 }
 
-/* Sessions toggle button (SESSIONS ▾) */
 .sessions-toggle-btn {
     display: flex;
     align-items: center;
@@ -83,7 +81,7 @@
     background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
 }
 
-/* Search bar (replaces toolbar when active) */
+/* Search bar */
 .sessions-search-bar {
     display: flex;
     align-items: center;
@@ -131,7 +129,6 @@
     opacity: 1 !important;
 }
 
-/* Search highlight */
 .search-highlight {
     background: var(--vscode-editor-findMatchHighlightBackground, #9e6a03);
     color: var(--vscode-editor-foreground, #d4d4d4);
@@ -227,7 +224,7 @@
     margin-top: 2px;
 }
 
-/* Session meta (right side) */
+/* Session meta */
 .session-meta {
     display: flex;
     flex-direction: column;
@@ -242,7 +239,7 @@
     white-space: nowrap;
 }
 
-/* Context menu trigger */
+/* Context menu */
 .ctx-wrap {
     position: relative;
 }
@@ -271,7 +268,6 @@
     background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
 }
 
-/* Context menu dropdown */
 .ctx-menu {
     position: absolute;
     right: 0;
@@ -305,8 +301,8 @@
 }
 
 .ctx-item.ctx-danger:hover {
-    background: #5a1d1d;
-    color: #f48771;
+    background: rgba(220, 104, 104, 0.15);
+    color: var(--vscode-inputValidation-errorForeground, #f48771);
 }
 
 .ctx-item.ctx-back {
@@ -398,25 +394,12 @@
     border: none;
     color: var(--vscode-textLink-foreground, #3794ff);
     cursor: pointer;
-    text-align: center;
     font-size: 12px;
     font-family: inherit;
-    opacity: 0.8;
-    transition: opacity 0.15s;
+    text-align: left;
+    transition: background 0.1s;
 }
 
 .load-more-btn:hover {
-    opacity: 1;
-    text-decoration: underline;
-}
-
-/* Scrollbar */
-.sessions-list::-webkit-scrollbar { width: 6px; }
-.sessions-list::-webkit-scrollbar-track { background: transparent; }
-.sessions-list::-webkit-scrollbar-thumb {
-    background: var(--vscode-scrollbarSlider-background, #797979);
-    border-radius: 3px;
-}
-.sessions-list::-webkit-scrollbar-thumb:hover {
-    background: var(--vscode-scrollbarSlider-hoverBackground, #a0a0a0);
+    background: var(--vscode-list-hoverBackground, #2a2d2e);
 }

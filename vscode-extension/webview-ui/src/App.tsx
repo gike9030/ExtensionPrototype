@@ -6,7 +6,6 @@ import { SessionsPanel } from './components/SessionsPanel'
 import { ExecutingPanel } from './components/ExecutingPanel'
 import type { Folder } from './components/SessionsPanel'
 
-// Acquire VSCode API once at module level
 const vscodeApi = (() => {
     try {
         return (globalThis as unknown as {
@@ -51,11 +50,14 @@ interface AppState {
 }
 
 const API_URL = 'http://localhost:5587'
+const CHAT_ENDPOINT = `${API_URL}/chat`
+const TITLE_PREVIEW_LENGTH = 50
+const CONTEXT_CONTENT_LIMIT = 3000
+const EXECUTION_STEP_INTERVAL_MS = 650
 
 function parseAppState(raw: string): AppState {
     try {
         const parsed = JSON.parse(raw)
-        // Support both old format (array) and new format ({conversations, folders})
         if (Array.isArray(parsed)) {
             return { conversations: parsed, folders: [] }
         }
@@ -82,7 +84,6 @@ function generateFakeSteps(message: string): string[] {
     if (m.includes('test') || m.includes('unit')) {
         return ['Reading source file', 'Identifying test cases', 'Writing tests']
     }
-    // default — code generation
     return ['Analyzing request', 'Reading context', 'Writing code', 'Reviewing output']
 }
 
@@ -99,6 +100,7 @@ function App() {
     const [loading, setLoading] = useState(false)
     const [execSteps, setExecSteps] = useState<string[]>([])
     const [execExpanded, setExecExpanded] = useState(true)
+    const [activePreviewCode, setActivePreviewCode] = useState<string | null>(null)
     const execTimers = useRef<ReturnType<typeof setTimeout>[]>([])
     const plannedSteps = useRef<string[]>([])
     const [activeFile, setActiveFile] = useState<ActiveFile | null>(null)
@@ -115,13 +117,11 @@ function App() {
     const conversationsRef = useRef(conversations)
     conversationsRef.current = conversations
 
-    // Persist state to extension host on every change
     useEffect(() => {
         const state: AppState = { conversations, folders }
         vscodeApi?.postMessage({ command: 'saveState', data: JSON.stringify(state) })
     }, [conversations, folders])
 
-    // Listen for messages from extension host
     useEffect(() => {
         const handler = (event: MessageEvent<{
             command: string; data?: string; mode?: LayoutMode;
@@ -155,7 +155,12 @@ function App() {
         return () => window.removeEventListener('message', handler)
     }, [])
 
-    // Close layout menu on outside click
+    useEffect(() => {
+        if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
+            setActivePreviewCode(null)
+        }
+    }, [messages])
+
     useEffect(() => {
         if (!showLayoutMenu) return
         const handler = (e: MouseEvent) => {
@@ -167,19 +172,14 @@ function App() {
         return () => document.removeEventListener('mousedown', handler)
     }, [showLayoutMenu])
 
-    // Auto-scroll to bottom
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages, loading])
 
-    // Sync messages only when switching to a different conversation
-    // Uses ref so conversations content changes don't re-trigger this
     useEffect(() => {
         const active = conversationsRef.current.find(c => c.id === activeConversationId)
         setMessages(active ? active.messages : [])
     }, [activeConversationId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-    // ── Conversation handlers ──────────────────────────────────────
 
     const createNewConversation = useCallback((): string => {
         const newId = Date.now().toString()
@@ -246,8 +246,6 @@ function App() {
         )
     }
 
-    // ── File context handlers ──────────────────────────────────────
-
     const handleHashTyped = useCallback(() => {
         if (workspaceFiles.length === 0) {
             vscodeApi?.postMessage({ command: 'getWorkspaceFiles' })
@@ -267,8 +265,6 @@ function App() {
         setActiveFile(prev => prev ? { ...prev, included: !prev.included } : prev)
     }, [])
 
-    // ── Send message ───────────────────────────────────────────────
-
     const sendMessage = async () => {
         const text = input.trim()
         if (!text || loading) return
@@ -279,9 +275,12 @@ function App() {
 
         if (!convId) {
             convId = Date.now().toString()
+            const titleText = text.length > TITLE_PREVIEW_LENGTH 
+                ? text.substring(0, TITLE_PREVIEW_LENGTH) + '...'
+                : text
             const newConv: Conversation = {
                 id: convId,
-                title: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
+                title: titleText,
                 timestamp: Date.now(),
                 messages: [userMessage],
                 pinned: false,
@@ -295,12 +294,11 @@ function App() {
 
         setSessionsExpanded(false)
 
-        // Build context-enriched message for the AI (user sees only `text`)
         const allContext = activeFile?.included ? [activeFile, ...contextFiles] : contextFiles
         let fullMessage = text
         if (allContext.length > 0) {
             const contextBlock = allContext
-                .map(f => `[File: ${f.name}]\n\`\`\`\n${f.content.slice(0, 3000)}\n\`\`\``)
+                .map(f => `[File: ${f.name}]\n\`\`\`\n${f.content.slice(0, CONTEXT_CONTENT_LIMIT)}\n\`\`\``)
                 .join('\n\n')
             fullMessage = `${contextBlock}\n\nUser question: ${text}`
         }
@@ -308,7 +306,6 @@ function App() {
         setInput('')
         setLoading(true)
 
-        // Start fake execution steps
         execTimers.current.forEach(clearTimeout)
         execTimers.current = []
         const steps = generateFakeSteps(text)
@@ -316,40 +313,58 @@ function App() {
         setExecSteps([])
         setExecExpanded(true)
         steps.forEach((step, i) => {
-            const t = setTimeout(() => setExecSteps(prev => [...prev, step]), i * 650)
+            const t = setTimeout(() => setExecSteps(prev => [...prev, step]), i * EXECUTION_STEP_INTERVAL_MS)
             execTimers.current.push(t)
         })
 
         try {
-            const res = await fetch(`${API_URL}/chat`, {
+            const res = await fetch(CHAT_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: fullMessage }),
+                body: JSON.stringify({ 
+                    message: fullMessage
+                }),
             })
-            const data = await res.json()
+            
+            if (!res.ok) {
+                throw new Error(`API request failed with status ${res.status}`)
+            }
+
+            let reply: string
+            try {
+                const data = await res.json()
+                reply = data.reply || data
+            } catch {
+                throw new Error('Invalid JSON response from backend')
+            }
+
             const assistantMessage: Message = {
                 role: 'assistant',
-                content: data.reply,
-                steps: plannedSteps.current,
+                content: reply,
+                steps: plannedSteps.current
             }
             const finalMessages = [...updatedMessages, assistantMessage]
             setMessages(finalMessages)
 
+            const titleText = text.length > TITLE_PREVIEW_LENGTH 
+                ? text.substring(0, TITLE_PREVIEW_LENGTH) + '...'
+                : text
             setConversations(prev =>
                 prev.map(c => {
                     if (c.id !== convId) return c
                     return {
                         ...c,
                         messages: finalMessages,
-                        title: c.title === 'New Conversation'
-                            ? text.substring(0, 50) + (text.length > 50 ? '...' : '')
-                            : c.title,
+                        title: c.title === 'New Conversation' ? titleText : c.title,
                         timestamp: Date.now(),
                     }
                 })
             )
-        } catch {
-            const errorMsg: Message = { role: 'assistant', content: '⚠️ Could not reach backend.' }
+        } catch (err) {
+            const errorMsg: Message = { 
+                role: 'assistant', 
+                content: '⚠️ Could not reach backend.' 
+            }
             const errorMessages = [...updatedMessages, errorMsg]
             setMessages(errorMessages)
             setConversations(prev =>
@@ -361,10 +376,9 @@ function App() {
         }
     }
 
-    // ── Apply code to editor ───────────────────────────────────────
-
     const handleApplyCode = useCallback((code: string) => {
-        vscodeApi?.postMessage({ command: 'applyCode', data: code })
+        vscodeApi?.postMessage({ command: 'previewCode', data: code })
+        setActivePreviewCode(code)
     }, [])
 
     const handlePreviewCode = useCallback((code: string) => {
@@ -378,8 +392,6 @@ function App() {
     const handleRejectPreview = useCallback(() => {
         vscodeApi?.postMessage({ command: 'rejectPreview' })
     }, [])
-
-    // ── Layout actions ─────────────────────────────────────────────
 
     const handleMoveToEditor = () => {
         setShowLayoutMenu(false)
@@ -396,8 +408,6 @@ function App() {
     }
 
     const activeTitle = conversations.find(c => c.id === activeConversationId)?.title ?? 'Chat'
-
-    // ── Render ─────────────────────────────────────────────────────
 
     return (
         <div className={`app layout-${layoutMode}`}>
@@ -488,9 +498,7 @@ function App() {
                                         metadata={msg.metadata}
                                         steps={msg.steps}
                                         onApplyCode={handleApplyCode}
-                                        onPreviewCode={handlePreviewCode}
-                                        onAcceptPreview={handleAcceptPreview}
-                                        onRejectPreview={handleRejectPreview}
+                                        activePreviewCode={activePreviewCode}
                                     />
                                 ))}
                                 {loading && (
