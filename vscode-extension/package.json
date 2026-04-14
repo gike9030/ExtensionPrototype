@@ -49,7 +49,7 @@
     "keybindings": [
       {
         "command": "aiChat.acceptOneToken",
-        "key": "shift+right",
+        "key": "ctrl+shift+right",
         "when": "aiChatPreviewActive && editorTextFocus"
       },
       {

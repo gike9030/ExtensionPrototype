@@ -101,6 +101,7 @@ function App() {
     const [execSteps, setExecSteps] = useState<string[]>([])
     const [execExpanded, setExecExpanded] = useState(true)
     const [activePreviewCode, setActivePreviewCode] = useState<string | null>(null)
+    const [acceptedCodes, setAcceptedCodes] = useState<Set<string>>(new Set())
     const execTimers = useRef<ReturnType<typeof setTimeout>[]>([])
     const plannedSteps = useRef<string[]>([])
     const [activeFile, setActiveFile] = useState<ActiveFile | null>(null)
@@ -127,6 +128,7 @@ function App() {
             command: string; data?: string; mode?: LayoutMode;
             name?: string; path?: string; content?: string;
             files?: Array<{ name: string; path: string }>;
+            code?: string;
         }>) => {
             const msg = event.data
             if (msg.command === 'restoreState' && msg.data) {
@@ -150,6 +152,10 @@ function App() {
                 const file: ContextFile = { name: msg.name, path: msg.path, content: msg.content }
                 setContextFiles(prev => prev.find(f => f.path === msg.path) ? prev : [...prev, file])
             }
+            if (msg.command === 'codeAcceptedViaKeyboard' && msg.code) {
+                setAcceptedCodes(prev => new Set([...prev, msg.code as string]))
+                setActivePreviewCode(null)
+            }
         }
         window.addEventListener('message', handler)
         return () => window.removeEventListener('message', handler)
@@ -158,6 +164,7 @@ function App() {
     useEffect(() => {
         if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
             setActivePreviewCode(null)
+            setAcceptedCodes(new Set())
         }
     }, [messages])
 
@@ -381,17 +388,25 @@ function App() {
         setActivePreviewCode(code)
     }, [])
 
-    const handlePreviewCode = useCallback((code: string) => {
-        vscodeApi?.postMessage({ command: 'previewCode', data: code })
-    }, [])
-
-    const handleAcceptPreview = useCallback(() => {
+    const handleAcceptCode = useCallback((code: string) => {
+        setAcceptedCodes(prev => new Set([...prev, code]))
+        setActivePreviewCode(null)
         vscodeApi?.postMessage({ command: 'acceptPreview' })
     }, [])
 
-    const handleRejectPreview = useCallback(() => {
+    const handleRejectCode = useCallback((code: string) => {
+        setAcceptedCodes(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(code)
+            return newSet
+        })
+        setActivePreviewCode(null)
         vscodeApi?.postMessage({ command: 'rejectPreview' })
     }, [])
+
+    const isCodeAccepted = useCallback((code: string) => {
+        return acceptedCodes.has(code)
+    }, [acceptedCodes])
 
     const handleMoveToEditor = () => {
         setShowLayoutMenu(false)
@@ -462,7 +477,7 @@ function App() {
                 </div>
 
                 {/* Sessions collapsible panel — always rendered, shows/hides list */}
-                <div style={{ order: sessionsExpanded ? 1 : 1 }}>
+                <div style={{ order: 1 }}>
                     <SessionsPanel
                         conversations={conversations}
                         folders={folders}
@@ -499,6 +514,9 @@ function App() {
                                         steps={msg.steps}
                                         onApplyCode={handleApplyCode}
                                         activePreviewCode={activePreviewCode}
+                                        onAcceptCode={handleAcceptCode}
+                                        onRejectCode={handleRejectCode}
+                                        isCodeAccepted={isCodeAccepted}
                                     />
                                 ))}
                                 {loading && (

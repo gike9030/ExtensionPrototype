@@ -91,6 +91,58 @@
   background: var(--vscode-list-activeSelectionBackground, #094771);
 }
 
+.code-accept-btn {
+  background: transparent;
+  border: 1px solid var(--vscode-input-border, #555);
+  color: var(--vscode-terminal-ansiGreen, #4ec994);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: all 0.15s;
+  font-weight: 500;
+}
+
+.code-accept-btn:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, #007acc);
+  outline-offset: -1px;
+}
+
+.code-accept-btn:hover {
+  background: rgba(78, 201, 148, 0.1);
+  border-color: var(--vscode-terminal-ansiGreen, #4ec994);
+}
+
+.code-accept-btn:active {
+  background: rgba(78, 201, 148, 0.2);
+}
+
+.code-reject-btn {
+  background: transparent;
+  border: 1px solid var(--vscode-input-border, #555);
+  color: var(--vscode-terminal-ansiRed, #f48771);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: all 0.15s;
+  font-weight: 500;
+}
+
+.code-reject-btn:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, #007acc);
+  outline-offset: -1px;
+}
+
+.code-reject-btn:hover {
+  background: rgba(244, 135, 113, 0.1);
+  border-color: var(--vscode-terminal-ansiRed, #f48771);
+}
+
+.code-reject-btn:active {
+  background: rgba(244, 135, 113, 0.2);
+}
+
 .code-content {
   overflow-x: auto;
   padding: 12px;

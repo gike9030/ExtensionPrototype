@@ -13,6 +13,8 @@ interface PreviewState {
     firstPendingLine: number;
     pendingLineCount: number;
     editorUri: string;
+    previewCode?: string;
+    firstLineAcceptedUpTo?: number;
 }
 let activePreview: PreviewState | undefined;
 
@@ -49,14 +51,36 @@ let previewCodeLensProvider: PreviewCodeLensProvider;
 
 function applyPreviewDecoration(editor: vscode.TextEditor, state: PreviewState) {
     const ranges: vscode.Range[] = [];
+    
     for (let i = 0; i < state.pendingLineCount; i++) {
-        ranges.push(editor.document.lineAt(state.firstPendingLine + i).range);
+        const lineNum = state.firstPendingLine + i;
+        const line = editor.document.lineAt(lineNum);
+        
+        if (i === 0 && state.firstLineAcceptedUpTo !== undefined && state.firstLineAcceptedUpTo > 0) {
+            const startCol = state.firstLineAcceptedUpTo;
+            ranges.push(new vscode.Range(
+                new vscode.Position(lineNum, startCol),
+                new vscode.Position(lineNum, line.range.end.character)
+            ));
+        } else {
+            ranges.push(line.range);
+        }
     }
     editor.setDecorations(state.decoration, ranges);
 }
 
-function clearPreview() {
+function clearPreview(acceptedViaKeyboard = false) {
     if (activePreview) {
+        if (acceptedViaKeyboard && activePreview.previewCode) {
+            sidebarView?.webview.postMessage({
+                command: 'codeAcceptedViaKeyboard',
+                code: activePreview.previewCode,
+            });
+            floatingPanel?.webview.postMessage({
+                command: 'codeAcceptedViaKeyboard',
+                code: activePreview.previewCode,
+            });
+        }
         activePreview.decoration.dispose();
         activePreview = undefined;
     }
@@ -100,47 +124,33 @@ export function activate(context: vscode.ExtensionContext) {
             if (!editor || editor.document.uri.toString() !== activePreview.editorUri) return;
 
             const preview = activePreview;
-            void editor.edit(editBuilder => {
-                for (let i = preview.firstPendingLine; i < preview.firstPendingLine + preview.pendingLineCount; i++) {
-                    const line = editor.document.lineAt(i);
-                    const lineText = line.text;
-                    
-                    const firstNonWhitespaceIndex = lineText.search(/\S/);
-                    if (firstNonWhitespaceIndex !== -1) {
-                        const tokenMatch = lineText.substring(firstNonWhitespaceIndex).match(/\S+/);
-                        if (tokenMatch) {
-                            const tokenStartColumn = firstNonWhitespaceIndex;
-                            const tokenEndColumn = tokenStartColumn + tokenMatch[0].length;
-                            
-                            const tokenRange = new vscode.Range(
-                                new vscode.Position(i, tokenStartColumn),
-                                new vscode.Position(i, tokenEndColumn)
-                            );
-                            editBuilder.delete(tokenRange);
-                        }
-                        break;
-                    }
-                }
-            }).then(() => {
-                if (!activePreview) return;
-                
-                while (activePreview.pendingLineCount > 0) {
-                    const currentLine = editor.document.lineAt(activePreview.firstPendingLine);
-                    if (currentLine.text.trim().length === 0) {
-                        activePreview.firstPendingLine += 1;
-                        activePreview.pendingLineCount -= 1;
-                    } else {
-                        break;
-                    }
-                }
-                
-                if (activePreview.pendingLineCount <= 0) {
-                    clearPreview();
+            const line = editor.document.lineAt(preview.firstPendingLine);
+            const lineText = line.text;
+            const acceptedUpTo = preview.firstLineAcceptedUpTo ?? 0;
+            
+            const remainingText = lineText.substring(acceptedUpTo);
+            const firstNonWhitespaceIndex = remainingText.search(/\S/);
+            
+            if (firstNonWhitespaceIndex === -1) {
+                preview.firstPendingLine += 1;
+                preview.pendingLineCount -= 1;
+                preview.firstLineAcceptedUpTo = undefined;
+                if (preview.pendingLineCount <= 0) {
+                    clearPreview(true);
                 } else {
-                    applyPreviewDecoration(editor, activePreview);
+                    applyPreviewDecoration(editor, preview);
                     previewCodeLensProvider.refresh();
                 }
-            });
+                return;
+            }
+            
+            const tokenMatch = remainingText.substring(firstNonWhitespaceIndex).match(/\S+/);
+            if (tokenMatch) {
+                const newAcceptedUpTo = acceptedUpTo + firstNonWhitespaceIndex + tokenMatch[0].length;
+                preview.firstLineAcceptedUpTo = newAcceptedUpTo;
+                applyPreviewDecoration(editor, preview);
+                previewCodeLensProvider.refresh();
+            }
         }),
 
         vscode.commands.registerCommand('aiChat.acceptNextLine', () => {
@@ -152,7 +162,7 @@ export function activate(context: vscode.ExtensionContext) {
             activePreview.pendingLineCount -= 1;
 
             if (activePreview.pendingLineCount <= 0) {
-                clearPreview();
+                clearPreview(true);
             } else {
                 applyPreviewDecoration(editor, activePreview);
                 previewCodeLensProvider.refresh();
@@ -160,7 +170,7 @@ export function activate(context: vscode.ExtensionContext) {
         }),
 
         vscode.commands.registerCommand('aiChat.acceptAll', () => {
-            clearPreview();
+            clearPreview(true);
         }),
 
         vscode.commands.registerCommand('aiChat.rejectPreview', () => {
@@ -238,6 +248,7 @@ function handlePreviewCode(code: string | undefined) {
             firstPendingLine: insertPos.line,
             pendingLineCount: lineCount,
             editorUri: editor.document.uri.toString(),
+            previewCode: code,
         };
         applyPreviewDecoration(editor, activePreview);
         void vscode.commands.executeCommand('setContext', 'aiChatPreviewActive', true);

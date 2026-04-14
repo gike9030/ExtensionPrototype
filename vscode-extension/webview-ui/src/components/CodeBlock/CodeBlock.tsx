@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import './CodeBlock.css'
@@ -9,6 +9,9 @@ export interface CodeBlockProps {
   onApplyCode?: (code: string) => void
   isPreviewActive?: boolean
   onPreviewStateChange?: (active: boolean) => void
+  onAccept?: () => void
+  onReject?: () => void
+  isCodeAccepted?: boolean
 }
 
 export function CodeBlock({
@@ -17,8 +20,13 @@ export function CodeBlock({
   onApplyCode,
   isPreviewActive = false,
   onPreviewStateChange,
+  onAccept,
+  onReject,
+  isCodeAccepted = false,
 }: CodeBlockProps) {
   const [copied, setCopied] = useState(false)
+  const [isAccepted, setIsAccepted] = useState(false)
+  const [isRejected, setIsRejected] = useState(false)
   const isDarkMode = !document.body.classList.contains('vscode-light')
   const lineCount = code.split('\n').length
   const shouldShowLineNumbers = lineCount > 5
@@ -34,8 +42,29 @@ export function CodeBlock({
   }
 
   const handleApply = () => {
+    setIsRejected(false)
+    setIsAccepted(false)
     onApplyCode?.(code)
     onPreviewStateChange?.(true)
+  }
+
+  useEffect(() => {
+    if (isPreviewActive) {
+      setIsRejected(false)
+      setIsAccepted(false)
+    }
+  }, [isPreviewActive])
+
+  const handleAccept = () => {
+    setIsAccepted(true)
+    setIsRejected(false)
+    onAccept?.()
+  }
+
+  const handleReject = () => {
+    setIsAccepted(false)
+    setIsRejected(true)
+    onReject?.()
   }
 
   const syntaxStyle = isDarkMode ? vscDarkPlus : vs
@@ -53,10 +82,22 @@ export function CodeBlock({
       <div className="code-header">
         <span className="code-language">{language}</span>
         <div className="code-actions">
-          {isPreviewActive ? (
-            <button className="code-apply-btn applied" disabled title="Code is being previewed in editor">
+          {isAccepted || isCodeAccepted ? (
+            <button className="code-apply-btn applied" disabled title="Code has been applied">
               ✓ Applied
             </button>
+          ) : isPreviewActive && !isRejected ? (
+            <>
+              <button className="code-apply-btn applied" disabled title="Code is being previewed in editor">
+                ✓ Applied
+              </button>
+              <button className="code-accept-btn" onClick={handleAccept} title="Accept the preview">
+                ✓ Accept
+              </button>
+              <button className="code-reject-btn" onClick={handleReject} title="Reject the preview">
+                ✕ Reject
+              </button>
+            </>
           ) : (
             onApplyCode && (
               <button className="code-apply-btn" onClick={handleApply} title="Apply to active editor">

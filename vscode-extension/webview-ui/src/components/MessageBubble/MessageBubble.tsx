@@ -12,6 +12,9 @@ export interface MessageBubbleProps {
   steps?: string[]
   onApplyCode?: (code: string) => void
   activePreviewCode?: string | null
+  onAcceptCode?: (code: string) => void
+  onRejectCode?: (code: string) => void
+  isCodeAccepted?: (code: string) => boolean
 }
 
 const CHECKMARK_ICON = '✓'
@@ -29,7 +32,10 @@ interface CodeRendererProps {
 function createCodeBlockRenderer(
   role: string,
   onApplyCode?: (code: string) => void,
-  activePreviewCode?: string | null
+  activePreviewCode?: string | null,
+  onAcceptCode?: (code: string) => void,
+  onRejectCode?: (code: string) => void,
+  isCodeAccepted?: (code: string) => boolean
 ) {
   return (props: CodeRendererProps) => {
     const { inline, className, children, ...rest } = props
@@ -51,6 +57,9 @@ function createCodeBlockRenderer(
         code={codeString}
         onApplyCode={role === 'assistant' ? onApplyCode : undefined}
         isPreviewActive={activePreviewCode === codeString}
+        isCodeAccepted={isCodeAccepted?.(codeString) ?? false}
+        onAccept={() => onAcceptCode?.(codeString)}
+        onReject={() => onRejectCode?.(codeString)}
       />
     )
   }
@@ -63,6 +72,9 @@ export function MessageBubble({
   steps,
   onApplyCode,
   activePreviewCode,
+  onAcceptCode,
+  onRejectCode,
+  isCodeAccepted,
 }: MessageBubbleProps) {
   const [stepsOpen, setStepsOpen] = useState(false)
 
@@ -70,7 +82,14 @@ export function MessageBubble({
 
   const shouldShowSteps = steps && steps.length > 0 && role === 'assistant'
   const stepCountText = steps ? `${steps.length} step${steps.length !== 1 ? 's' : ''}` : ''
-  const codeBlockRenderer = createCodeBlockRenderer(role, onApplyCode, activePreviewCode)
+  const codeBlockRenderer = createCodeBlockRenderer(
+    role,
+    onApplyCode,
+    activePreviewCode,
+    onAcceptCode,
+    onRejectCode,
+    isCodeAccepted
+  )
 
   return (
     <div className={`message ${role}`}>

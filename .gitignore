@@ -55,6 +55,9 @@ vscode-extension/webview-ui/dist/
 vscode-extension/node_modules/
 vscode-extension/webview-ui/node_modules/
 
+# TypeScript
+**/*.tsbuildinfo
+
 # Editor
 .vscode/
 *.swp
