@@ -160,6 +160,7 @@ export function activate(context: vscode.ExtensionContext) {
 
             activePreview.firstPendingLine += 1;
             activePreview.pendingLineCount -= 1;
+            activePreview.firstLineAcceptedUpTo = undefined;
 
             if (activePreview.pendingLineCount <= 0) {
                 clearPreview(true);
