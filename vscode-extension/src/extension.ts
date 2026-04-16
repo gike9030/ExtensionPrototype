@@ -10,6 +10,7 @@ let extContext: vscode.ExtensionContext;
 
 interface PreviewState {
     decoration: vscode.TextEditorDecorationType;
+    partialDecoration: vscode.TextEditorDecorationType;
     firstPendingLine: number;
     pendingLineCount: number;
     editorUri: string;
@@ -50,7 +51,8 @@ class PreviewCodeLensProvider implements vscode.CodeLensProvider {
 let previewCodeLensProvider: PreviewCodeLensProvider;
 
 function applyPreviewDecoration(editor: vscode.TextEditor, state: PreviewState) {
-    const ranges: vscode.Range[] = [];
+    const wholeLineRanges: vscode.Range[] = [];
+    const partialLineRanges: vscode.Range[] = [];
     
     for (let i = 0; i < state.pendingLineCount; i++) {
         const lineNum = state.firstPendingLine + i;
@@ -58,15 +60,17 @@ function applyPreviewDecoration(editor: vscode.TextEditor, state: PreviewState) 
         
         if (i === 0 && state.firstLineAcceptedUpTo !== undefined && state.firstLineAcceptedUpTo > 0) {
             const startCol = state.firstLineAcceptedUpTo;
-            ranges.push(new vscode.Range(
+            partialLineRanges.push(new vscode.Range(
                 new vscode.Position(lineNum, startCol),
                 new vscode.Position(lineNum, line.range.end.character)
             ));
         } else {
-            ranges.push(line.range);
+            wholeLineRanges.push(line.range);
         }
     }
-    editor.setDecorations(state.decoration, ranges);
+    
+    editor.setDecorations(state.decoration, wholeLineRanges);
+    editor.setDecorations(state.partialDecoration, partialLineRanges);
 }
 
 function clearPreview(acceptedViaKeyboard = false) {
@@ -82,6 +86,7 @@ function clearPreview(acceptedViaKeyboard = false) {
             });
         }
         activePreview.decoration.dispose();
+        activePreview.partialDecoration.dispose();
         activePreview = undefined;
     }
     void vscode.commands.executeCommand('setContext', 'aiChatPreviewActive', false);
@@ -244,8 +249,12 @@ function handlePreviewCode(code: string | undefined) {
             backgroundColor: new vscode.ThemeColor('diffEditor.insertedLineBackground'),
             isWholeLine: true,
         });
+        const partialDecoration = vscode.window.createTextEditorDecorationType({
+            backgroundColor: new vscode.ThemeColor('diffEditor.insertedLineBackground'),
+        });
         activePreview = {
             decoration,
+            partialDecoration,
             firstPendingLine: insertPos.line,
             pendingLineCount: lineCount,
             editorUri: editor.document.uri.toString(),
