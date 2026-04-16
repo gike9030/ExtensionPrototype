@@ -54,7 +54,7 @@
       },
       {
         "command": "aiChat.acceptNextLine",
-        "key": "shift+down",
+        "key": "ctrl+shift+down",
         "when": "aiChatPreviewActive && editorTextFocus"
       },
       {
