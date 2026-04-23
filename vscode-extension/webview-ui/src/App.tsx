@@ -238,6 +238,12 @@ function App() {
         )
     }
 
+    const handleRemoveFromFolder = (sessionId: string) => {
+        setConversations(prev =>
+            prev.map(c => c.id === sessionId ? { ...c, folderId: null } : c)
+        )
+    }
+
     const handleCreateFolder = (name: string) => {
         const newFolder: Folder = {
             id: Date.now().toString(),
@@ -250,6 +256,19 @@ function App() {
     const handleToggleFolderExpand = (folderId: string) => {
         setFolders(prev =>
             prev.map(f => f.id === folderId ? { ...f, isExpanded: !f.isExpanded } : f)
+        )
+    }
+
+    const handleRenameFolder = (folderId: string, newName: string) => {
+        setFolders(prev =>
+            prev.map(f => f.id === folderId ? { ...f, name: newName } : f)
+        )
+    }
+
+    const handleDeleteFolder = (folderId: string) => {
+        setFolders(prev => prev.filter(f => f.id !== folderId))
+        setConversations(prev =>
+            prev.map(c => c.folderId === folderId ? { ...c, folderId: null } : c)
         )
     }
 
@@ -488,8 +507,11 @@ function App() {
                         onDeleteSession={handleDeleteSession}
                         onTogglePin={handleTogglePin}
                         onAddToFolder={handleAddToFolder}
+                        onRemoveFromFolder={handleRemoveFromFolder}
                         onCreateFolder={handleCreateFolder}
                         onToggleFolderExpand={handleToggleFolderExpand}
+                        onRenameFolder={handleRenameFolder}
+                        onDeleteFolder={handleDeleteFolder}
                     />
                 </div>
 

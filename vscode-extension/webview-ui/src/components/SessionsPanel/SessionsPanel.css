@@ -242,6 +242,7 @@
 /* Context menu */
 .ctx-wrap {
     position: relative;
+    z-index: 100;
 }
 
 .ctx-trigger {
@@ -269,14 +270,12 @@
 }
 
 .ctx-menu {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 2px);
+    position: fixed;
     background: var(--vscode-menu-background, #2d2d30);
     border: 1px solid var(--vscode-menu-border, #454545);
     border-radius: 4px;
     min-width: 145px;
-    z-index: 400;
+    z-index: 10000;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
     overflow: hidden;
 }
@@ -372,6 +371,90 @@
 
 .folder-chevron.open {
     transform: rotate(90deg);
+}
+
+.folder-header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+.folder-menu-container {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.folder-menu-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    color: var(--vscode-descriptionForeground, #858585);
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    transition: background 0.1s, color 0.1s;
+}
+
+.folder-menu-btn:hover {
+    background: var(--vscode-list-hoverBackground, #2a2d2e);
+    color: var(--vscode-foreground, #d4d4d4);
+}
+
+.folder-menu {
+    position: fixed;
+    background: var(--vscode-menu-background, #2d2d30);
+    border: 1px solid var(--vscode-menu-border, #454545);
+    border-radius: 4px;
+    min-width: 145px;
+    z-index: 10000;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+    overflow: hidden;
+}
+
+.menu-item {
+    display: block;
+    width: 100%;
+    padding: 7px 14px;
+    background: transparent;
+    border: none;
+    color: var(--vscode-menu-foreground, #d4d4d4);
+    cursor: pointer;
+    text-align: left;
+    font-size: 13px;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.menu-item:hover {
+    background: var(--vscode-menu-selectionBackground, #0e639c);
+    color: var(--vscode-menu-selectionForeground, #ffffff);
+}
+
+.menu-item-danger:hover {
+    background: rgba(220, 104, 104, 0.15);
+    color: var(--vscode-inputValidation-errorForeground, #f48771);
+}
+
+.folder-name-input {
+    flex: 1;
+    padding: 2px 4px;
+    background: var(--vscode-input-background, #3c3c3c);
+    border: 1px solid var(--vscode-input-border, #555555);
+    color: var(--vscode-foreground, #d4d4d4);
+    font-size: 13px;
+    border-radius: 3px;
+    font-family: inherit;
+    outline: none;
+}
+
+.folder-name-input:focus {
+    border-color: var(--vscode-focusBorder, #007acc);
+    outline: none;
 }
 
 .folder-contents {

@@ -32,8 +32,11 @@ interface SessionsPanelProps {
   onDeleteSession: (id: string) => void
   onTogglePin: (id: string) => void
   onAddToFolder: (sessionId: string, folderId: string) => void
+  onRemoveFromFolder: (sessionId: string) => void
   onCreateFolder: (name: string) => void
   onToggleFolderExpand: (folderId: string) => void
+  onRenameFolder: (folderId: string, newName: string) => void
+  onDeleteFolder: (folderId: string) => void
 }
 
 const PAGE_SIZE = 5
@@ -139,22 +142,30 @@ export function SessionsPanel({
   onDeleteSession,
   onTogglePin,
   onAddToFolder,
+  onRemoveFromFolder,
   onCreateFolder,
   onToggleFolderExpand,
+  onRenameFolder,
+  onDeleteFolder,
 }: SessionsPanelProps) {
   const [displayCount, setDisplayCount] = useState(PAGE_SIZE)
   const [contextMenuId, setContextMenuId] = useState<string | null>(null)
   const [folderSubMenuId, setFolderSubMenuId] = useState<string | null>(null)
+  const [folderMenuId, setFolderMenuId] = useState<string | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renamingFolderId, setRenamingFolderId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const [creatingFolder, setCreatingFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [isSearchActive, setIsSearchActive] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 })
+  const [folderMenuPosition, setFolderMenuPosition] = useState({ top: 0, right: 0 })
 
   const renameInputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const triggerButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (isSearchActive) searchInputRef.current?.focus()
@@ -184,7 +195,17 @@ export function SessionsPanel({
 
   const handleOpenContextMenu = (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
-    setContextMenuId(prev => (prev === id ? null : id))
+    if (contextMenuId === id) {
+      setContextMenuId(null)
+    } else {
+      setContextMenuId(id)
+      const button = e.currentTarget as HTMLButtonElement
+      const rect = button.getBoundingClientRect()
+      setMenuPosition({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right
+      })
+    }
     setFolderSubMenuId(null)
   }
 
@@ -206,6 +227,21 @@ export function SessionsPanel({
     if (trimmed) onCreateFolder(trimmed)
     setNewFolderName('')
     setCreatingFolder(false)
+  }
+
+  const handleOpenFolderMenu = (e: React.MouseEvent, folderId: string) => {
+    e.stopPropagation()
+    if (folderMenuId === folderId) {
+      setFolderMenuId(null)
+    } else {
+      setFolderMenuId(folderId)
+      const button = e.currentTarget as HTMLButtonElement
+      const rect = button.getBoundingClientRect()
+      setFolderMenuPosition({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right
+      })
+    }
   }
 
   const visibleConversations = searchQuery
@@ -276,33 +312,59 @@ export function SessionsPanel({
             </button>
 
             {menuOpen && !subMenuOpen && (
-              <div className="ctx-menu" onClick={e => e.stopPropagation()}>
+              <div 
+                className="ctx-menu" 
+                onClick={e => e.stopPropagation()}
+                style={{
+                  top: `${menuPosition.top}px`,
+                  right: `${menuPosition.right}px`
+                }}
+              >
                 <button className="ctx-item" onClick={e => { e.stopPropagation(); handleStartRename(e, conv) }}>
                   Rename
                 </button>
+                {conv.folderId && (
+                  <button
+                    className="ctx-item"
+                    onClick={e => { e.stopPropagation(); onRemoveFromFolder(conv.id); setContextMenuId(null) }}
+                  >
+                    Remove from folder
+                  </button>
+                )}
+                {!conv.folderId && (
+                  <>
+                    <button
+                      className="ctx-item"
+                      onClick={e => { e.stopPropagation(); setFolderSubMenuId(conv.id) }}
+                    >
+                      Add to folder {CHEVRON_ICON}
+                    </button>
+                    <button
+                      className="ctx-item"
+                      onClick={e => { e.stopPropagation(); onTogglePin(conv.id); setContextMenuId(null) }}
+                    >
+                      {conv.pinned ? 'Unpin' : 'Pin'}
+                    </button>
+                  </>
+                )}
                 <button
                   className="ctx-item ctx-danger"
                   onClick={e => { e.stopPropagation(); onDeleteSession(conv.id); setContextMenuId(null) }}
                 >
                   Delete
                 </button>
-                <button
-                  className="ctx-item"
-                  onClick={e => { e.stopPropagation(); setFolderSubMenuId(conv.id) }}
-                >
-                  Add to folder {CHEVRON_ICON}
-                </button>
-                <button
-                  className="ctx-item"
-                  onClick={e => { e.stopPropagation(); onTogglePin(conv.id); setContextMenuId(null) }}
-                >
-                  {conv.pinned ? 'Unpin' : 'Pin'}
-                </button>
               </div>
             )}
 
             {subMenuOpen && (
-              <div className="ctx-menu" onClick={e => e.stopPropagation()}>
+              <div 
+                className="ctx-menu" 
+                onClick={e => e.stopPropagation()}
+                style={{
+                  top: `${menuPosition.top}px`,
+                  right: `${menuPosition.right}px`
+                }}
+              >
                 <button
                   className="ctx-item ctx-back"
                   onClick={e => { e.stopPropagation(); setFolderSubMenuId(null) }}
@@ -441,13 +503,83 @@ export function SessionsPanel({
 
           return (
             <div key={folder.id} className="folder-group">
-              <div
-                className="folder-header"
-                onClick={() => onToggleFolderExpand(folder.id)}
-              >
-                <span className="folder-icon">{FOLDER_ICON}</span>
-                <span className="folder-name">{folder.name}</span>
-                <span className={`folder-chevron${folder.isExpanded ? ' open' : ''}`}>{CHEVRON_ICON}</span>
+              <div className="folder-header-container">
+                <div
+                  className="folder-header"
+                  onClick={() => onToggleFolderExpand(folder.id)}
+                >
+                  <span className="folder-icon">{FOLDER_ICON}</span>
+                  {renamingFolderId === folder.id ? (
+                    <input
+                      type="text"
+                      autoFocus
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onBlur={() => {
+                        if (renameValue.trim()) {
+                          onRenameFolder(folder.id, renameValue.trim())
+                        }
+                        setRenamingFolderId(null)
+                        setRenameValue('')
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (renameValue.trim()) {
+                            onRenameFolder(folder.id, renameValue.trim())
+                          }
+                          setRenamingFolderId(null)
+                          setRenameValue('')
+                        } else if (e.key === 'Escape') {
+                          setRenamingFolderId(null)
+                          setRenameValue('')
+                        }
+                      }}
+                      className="folder-name-input"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <span className="folder-name">{folder.name}</span>
+                  )}
+                  <span className={`folder-chevron${folder.isExpanded ? ' open' : ''}`}>{CHEVRON_ICON}</span>
+                </div>
+                <div className="folder-menu-container">
+                  <button
+                    className="folder-menu-btn"
+                    onClick={(e) => handleOpenFolderMenu(e, folder.id)}
+                  >
+                    {MENU_TRIGGER}
+                  </button>
+                  {folderMenuId === folder.id && (
+                    <div 
+                      className="folder-menu" 
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        top: `${folderMenuPosition.top}px`,
+                        right: `${folderMenuPosition.right}px`
+                      }}
+                    >
+                      <button
+                        className="menu-item"
+                        onClick={() => {
+                          setRenamingFolderId(folder.id)
+                          setRenameValue(folder.name)
+                          setFolderMenuId(null)
+                        }}
+                      >
+                        Rename
+                      </button>
+                      <button
+                        className="menu-item menu-item-danger"
+                        onClick={() => {
+                          onDeleteFolder(folder.id)
+                          setFolderMenuId(null)
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               {folder.isExpanded && (
                 <div className="folder-contents">

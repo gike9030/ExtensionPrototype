@@ -24,7 +24,7 @@
         {
           "type": "webview",
           "id": "aiChatPanel",
-          "name": "Sessions"
+          "name": ""
         }
       ]
     },
