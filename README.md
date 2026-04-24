@@ -104,22 +104,6 @@ vsce package
 - Manages activation and lifecycle
 - Hosts the React webview UI
 
-## File Changes Overview
-
-Created files for development convenience:
-
-- `.vscode/tasks.json` - Defines `Run All (API + Extension)` task
-- `.vscode/launch.json` - Configures debugger to start both services
-- `.vscode/settings.json` - OmniSharp settings for C# development
-
-## Next Steps
-
-1. ✅ Development environment ready
-2. 🔄 **TODO:** Implement Supabase PostgreSQL integration for chat history
-3. 🔄 **TODO:** Replace placeholder AI model with real implementation
-4. 🔄 **TODO:** Add authentication (optional)
-5. 🔄 **TODO:** Package and publish to VS Marketplace
-
 ## Troubleshooting
 
 ### Port Already in Use
@@ -151,6 +135,3 @@ npm run watch
 4. Push to remote and create a PR
 5. Request review from team
 
-## License
-
-MIT
