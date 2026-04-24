@@ -10,26 +10,87 @@ let extContext: vscode.ExtensionContext;
 
 interface PreviewState {
     decoration: vscode.TextEditorDecorationType;
+    partialDecoration: vscode.TextEditorDecorationType;
     firstPendingLine: number;
     pendingLineCount: number;
     editorUri: string;
+    previewCode?: string;
+    firstLineAcceptedUpTo?: number;
 }
 let activePreview: PreviewState | undefined;
 
-function applyPreviewDecoration(editor: vscode.TextEditor, state: PreviewState) {
-    const ranges: vscode.Range[] = [];
-    for (let i = 0; i < state.pendingLineCount; i++) {
-        ranges.push(editor.document.lineAt(state.firstPendingLine + i).range);
+class PreviewCodeLensProvider implements vscode.CodeLensProvider {
+    private onDidChangeCodeLensesEmitter = new vscode.EventEmitter<void>();
+    onDidChangeCodeLenses = this.onDidChangeCodeLensesEmitter.event;
+
+    provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
+        if (!activePreview || activePreview.editorUri !== document.uri.toString()) {
+            return [];
+        }
+
+        const line = activePreview.firstPendingLine;
+        const range = new vscode.Range(line, 0, line, 0);
+        
+        return [
+            new vscode.CodeLens(range, {
+                title: '✓',
+                command: 'aiChat.acceptAll',
+            }),
+            new vscode.CodeLens(range, {
+                title: '✕',
+                command: 'aiChat.rejectPreview',
+            }),
+        ];
     }
-    editor.setDecorations(state.decoration, ranges);
+
+    refresh() {
+        this.onDidChangeCodeLensesEmitter.fire();
+    }
 }
 
-function clearPreview() {
+let previewCodeLensProvider: PreviewCodeLensProvider;
+
+function applyPreviewDecoration(editor: vscode.TextEditor, state: PreviewState) {
+    const wholeLineRanges: vscode.Range[] = [];
+    const partialLineRanges: vscode.Range[] = [];
+    
+    for (let i = 0; i < state.pendingLineCount; i++) {
+        const lineNum = state.firstPendingLine + i;
+        const line = editor.document.lineAt(lineNum);
+        
+        if (i === 0 && state.firstLineAcceptedUpTo !== undefined && state.firstLineAcceptedUpTo > 0) {
+            const startCol = state.firstLineAcceptedUpTo;
+            partialLineRanges.push(new vscode.Range(
+                new vscode.Position(lineNum, startCol),
+                new vscode.Position(lineNum, line.range.end.character)
+            ));
+        } else {
+            wholeLineRanges.push(line.range);
+        }
+    }
+    
+    editor.setDecorations(state.decoration, wholeLineRanges);
+    editor.setDecorations(state.partialDecoration, partialLineRanges);
+}
+
+function clearPreview(acceptedViaKeyboard = false) {
     if (activePreview) {
+        if (acceptedViaKeyboard && activePreview.previewCode) {
+            sidebarView?.webview.postMessage({
+                command: 'codeAcceptedViaKeyboard',
+                code: activePreview.previewCode,
+            });
+            floatingPanel?.webview.postMessage({
+                command: 'codeAcceptedViaKeyboard',
+                code: activePreview.previewCode,
+            });
+        }
         activePreview.decoration.dispose();
+        activePreview.partialDecoration.dispose();
         activePreview = undefined;
     }
     void vscode.commands.executeCommand('setContext', 'aiChatPreviewActive', false);
+    previewCodeLensProvider.refresh();
 }
 
 function broadcastActiveFile(editor: vscode.TextEditor | undefined) {
@@ -47,17 +108,56 @@ export function activate(context: vscode.ExtensionContext) {
     extUri = context.extensionUri;
     savedConversations = context.globalState.get<string>('chatConversations', '[]');
 
+    previewCodeLensProvider = new PreviewCodeLensProvider();
+    context.subscriptions.push(
+        vscode.languages.registerCodeLensProvider({ scheme: 'file' }, previewCodeLensProvider)
+    );
+
     const provider = new ChatViewProvider(context.extensionUri);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(ChatViewProvider.viewType, provider)
     );
 
-    // Broadcast active editor changes to all open webviews
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor(editor => broadcastActiveFile(editor))
     );
 
     context.subscriptions.push(
+        vscode.commands.registerCommand('aiChat.acceptOneToken', () => {
+            if (!activePreview) return;
+            const editor = vscode.window.activeTextEditor;
+            if (!editor || editor.document.uri.toString() !== activePreview.editorUri) return;
+
+            const preview = activePreview;
+            const line = editor.document.lineAt(preview.firstPendingLine);
+            const lineText = line.text;
+            const acceptedUpTo = preview.firstLineAcceptedUpTo ?? 0;
+            
+            const remainingText = lineText.substring(acceptedUpTo);
+            const firstNonWhitespaceIndex = remainingText.search(/\S/);
+            
+            if (firstNonWhitespaceIndex === -1) {
+                preview.firstPendingLine += 1;
+                preview.pendingLineCount -= 1;
+                preview.firstLineAcceptedUpTo = undefined;
+                if (preview.pendingLineCount <= 0) {
+                    clearPreview(true);
+                } else {
+                    applyPreviewDecoration(editor, preview);
+                    previewCodeLensProvider.refresh();
+                }
+                return;
+            }
+            
+            const tokenMatch = remainingText.substring(firstNonWhitespaceIndex).match(/\S+/);
+            if (tokenMatch) {
+                const newAcceptedUpTo = acceptedUpTo + firstNonWhitespaceIndex + tokenMatch[0].length;
+                preview.firstLineAcceptedUpTo = newAcceptedUpTo;
+                applyPreviewDecoration(editor, preview);
+                previewCodeLensProvider.refresh();
+            }
+        }),
+
         vscode.commands.registerCommand('aiChat.acceptNextLine', () => {
             if (!activePreview) return;
             const editor = vscode.window.activeTextEditor;
@@ -65,16 +165,18 @@ export function activate(context: vscode.ExtensionContext) {
 
             activePreview.firstPendingLine += 1;
             activePreview.pendingLineCount -= 1;
+            activePreview.firstLineAcceptedUpTo = undefined;
 
             if (activePreview.pendingLineCount <= 0) {
-                clearPreview();
+                clearPreview(true);
             } else {
                 applyPreviewDecoration(editor, activePreview);
+                previewCodeLensProvider.refresh();
             }
         }),
 
         vscode.commands.registerCommand('aiChat.acceptAll', () => {
-            clearPreview();
+            clearPreview(true);
         }),
 
         vscode.commands.registerCommand('aiChat.rejectPreview', () => {
@@ -114,7 +216,6 @@ function buildHtml(webview: vscode.Webview, mode: 'sidebar' | 'editor' | 'window
         html = html.replace(/src="\.\/assets\/index\.js"/g, `src="${scriptUri}"`);
         html = html.replace(/href="\.\/assets\/index\.css"/g, `href="${styleUri}"`);
 
-        // Inject initial state and layout mode before </head>
         const initScript = `<script>
             window.__INITIAL_STATE__ = ${JSON.stringify(savedConversations)};
             window.__LAYOUT_MODE__ = "${mode}";
@@ -132,6 +233,97 @@ function buildHtml(webview: vscode.Webview, mode: 'sidebar' | 'editor' | 'window
     }
 }
 
+function handlePreviewCode(code: string | undefined) {
+    if (!code) return;
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showWarningMessage('Open a file in the editor first.');
+        return;
+    }
+    clearPreview();
+    const insertPos = editor.selection.active;
+    void editor.edit(b => b.insert(insertPos, code)).then(success => {
+        if (!success) return;
+        const lineCount = code.split('\n').length;
+        const decoration = vscode.window.createTextEditorDecorationType({
+            backgroundColor: new vscode.ThemeColor('diffEditor.insertedLineBackground'),
+            isWholeLine: true,
+        });
+        const partialDecoration = vscode.window.createTextEditorDecorationType({
+            backgroundColor: new vscode.ThemeColor('diffEditor.insertedLineBackground'),
+        });
+        activePreview = {
+            decoration,
+            partialDecoration,
+            firstPendingLine: insertPos.line,
+            pendingLineCount: lineCount,
+            editorUri: editor.document.uri.toString(),
+            previewCode: code,
+        };
+        applyPreviewDecoration(editor, activePreview);
+        void vscode.commands.executeCommand('setContext', 'aiChatPreviewActive', true);
+        previewCodeLensProvider.refresh();
+    });
+}
+
+function handleApplyCode(code: string | undefined) {
+    if (!code) return;
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showWarningMessage('Open a file in the editor first.');
+        return;
+    }
+    void editor.edit(editBuilder => {
+        const selection = editor.selection;
+        if (selection.isEmpty) {
+            editBuilder.insert(selection.active, code);
+        } else {
+            editBuilder.replace(selection, code);
+        }
+    });
+}
+
+function handleGetWorkspaceFiles() {
+    const filePatterns = '**/*.{ts,tsx,js,jsx,cs,py,json,md,html,css,yaml,yml,txt}';
+    vscode.workspace.findFiles(
+        filePatterns,
+        '**/node_modules/**',
+        60
+    ).then(files => {
+        const fileList = files.map(f => ({ name: path.basename(f.fsPath), path: f.fsPath }));
+        const response = { command: 'workspaceFiles', files: fileList };
+        sidebarView?.webview.postMessage(response);
+        floatingPanel?.webview.postMessage(response);
+    });
+}
+
+function handleGetFileContent(filePath: string | undefined) {
+    if (!filePath) return;
+    try {
+        const content = fs.readFileSync(filePath, 'utf8');
+        const name = path.basename(filePath);
+        const response = { command: 'fileContent', name, path: filePath, content };
+        sidebarView?.webview.postMessage(response);
+        floatingPanel?.webview.postMessage(response);
+    } catch {
+        const response = { command: 'fileContent', name: '', path: '', content: '', error: true };
+        sidebarView?.webview.postMessage(response);
+        floatingPanel?.webview.postMessage(response);
+    }
+}
+
+function handleMoveToSidebar() {
+    if (floatingPanel) {
+        floatingPanel.dispose();
+        floatingPanel = undefined;
+    }
+    sidebarView?.show(false);
+    sidebarView?.webview.postMessage({
+        command: 'restoreState',
+        data: savedConversations,
+    });
+}
+
 function handleMessage(msg: { command: string; data?: string }) {
     switch (msg.command) {
         case 'saveState':
@@ -147,34 +339,9 @@ function handleMessage(msg: { command: string; data?: string }) {
             openFloatingPanel('window');
             break;
 
-        case 'previewCode': {
-            const code = msg.data;
-            if (!code) break;
-            const editor = vscode.window.activeTextEditor;
-            if (!editor) {
-                vscode.window.showWarningMessage('Open a file in the editor first.');
-                break;
-            }
-            clearPreview();
-            const insertPos = editor.selection.active;
-            void editor.edit(b => b.insert(insertPos, code)).then(success => {
-                if (!success) return;
-                const lineCount = code.split('\n').length;
-                const decoration = vscode.window.createTextEditorDecorationType({
-                    backgroundColor: new vscode.ThemeColor('diffEditor.insertedLineBackground'),
-                    isWholeLine: true,
-                });
-                activePreview = {
-                    decoration,
-                    firstPendingLine: insertPos.line,
-                    pendingLineCount: lineCount,
-                    editorUri: editor.document.uri.toString(),
-                };
-                applyPreviewDecoration(editor, activePreview);
-                void vscode.commands.executeCommand('setContext', 'aiChatPreviewActive', true);
-            });
+        case 'previewCode':
+            handlePreviewCode(msg.data);
             break;
-        }
 
         case 'acceptPreview':
             void vscode.commands.executeCommand('aiChat.acceptAll');
@@ -184,66 +351,20 @@ function handleMessage(msg: { command: string; data?: string }) {
             void vscode.commands.executeCommand('aiChat.rejectPreview');
             break;
 
-        case 'applyCode': {
-            const code = msg.data;
-            if (!code) break;
-            const editor = vscode.window.activeTextEditor;
-            if (!editor) {
-                vscode.window.showWarningMessage('Open a file in the editor first.');
-                break;
-            }
-            void editor.edit(editBuilder => {
-                const selection = editor.selection;
-                if (selection.isEmpty) {
-                    editBuilder.insert(selection.active, code);
-                } else {
-                    editBuilder.replace(selection, code);
-                }
-            });
+        case 'applyCode':
+            handleApplyCode(msg.data);
             break;
-        }
 
         case 'getWorkspaceFiles':
-            vscode.workspace.findFiles(
-                '**/*.{ts,tsx,js,jsx,cs,py,json,md,html,css,yaml,yml,txt}',
-                '**/node_modules/**',
-                60
-            ).then(files => {
-                const fileList = files.map(f => ({ name: path.basename(f.fsPath), path: f.fsPath }));
-                const response = { command: 'workspaceFiles', files: fileList };
-                sidebarView?.webview.postMessage(response);
-                floatingPanel?.webview.postMessage(response);
-            });
+            handleGetWorkspaceFiles();
             break;
 
-        case 'getFileContent': {
-            const filePath = msg.data;
-            if (filePath) {
-                try {
-                    const content = fs.readFileSync(filePath, 'utf8');
-                    const name = path.basename(filePath);
-                    const response = { command: 'fileContent', name, path: filePath, content };
-                    sidebarView?.webview.postMessage(response);
-                    floatingPanel?.webview.postMessage(response);
-                } catch { /* ignore unreadable files */ }
-            }
+        case 'getFileContent':
+            handleGetFileContent(msg.data);
             break;
-        }
 
         case 'moveToSidebar':
-            if (floatingPanel) {
-                floatingPanel.dispose();
-                floatingPanel = undefined;
-            }
-            // Reveal the sidebar panel and restore its state
-            vscode.commands.executeCommand('aiChatPanel.focus').then(() => {
-                if (sidebarView) {
-                    sidebarView.webview.postMessage({
-                        command: 'restoreState',
-                        data: savedConversations,
-                    });
-                }
-            });
+            handleMoveToSidebar();
             break;
     }
 }
@@ -252,10 +373,8 @@ function openFloatingPanel(mode: 'editor' | 'window') {
     if (floatingPanel) {
         floatingPanel.reveal();
         if (mode === 'window') {
-            setTimeout(
-                () => vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow'),
-                200
-            );
+            floatingPanel.reveal(vscode.ViewColumn.Active);
+            setTimeout(() => vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow'), 50);
         }
         return;
     }
@@ -278,10 +397,8 @@ function openFloatingPanel(mode: 'editor' | 'window') {
     });
 
     if (mode === 'window') {
-        setTimeout(
-            () => vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow'),
-            400
-        );
+        floatingPanel.reveal(vscode.ViewColumn.Active);
+        setTimeout(() => vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow'), 50);
     }
 }
 
@@ -304,7 +421,6 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(handleMessage);
         webviewView.onDidDispose(() => { sidebarView = undefined; });
 
-        // Send currently active file on load
         void Promise.resolve().then(() => broadcastActiveFile(vscode.window.activeTextEditor));
     }
 }

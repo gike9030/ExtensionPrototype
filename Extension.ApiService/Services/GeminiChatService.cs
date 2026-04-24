@@ -1,10 +1,12 @@
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
+using Extension.ApiService.Exceptions;
 
 namespace Extension.ApiService.Services;
 
-public sealed class GeminiChatService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+public sealed class GeminiChatService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<GeminiChatService> logger)
 {
     private const string DefaultModel = "models/gemini-2.0-flash";
     private List<string>? _availableModels;
@@ -34,14 +36,24 @@ public sealed class GeminiChatService(IHttpClientFactory httpClientFactory, ICon
             {
                 return await TryGenerateReplyAsync(message, model, apiKey, cancellationToken);
             }
-            catch (HttpRequestException ex) when (ex.Message.Contains("429"))
+            catch (QuotaExceededException)
             {
-                Console.WriteLine($"Quota exceeded for {model}, trying next...");
+                logger.LogWarning("Quota exceeded for {Model}, trying next...", model);
+                continue;
+            }
+            catch (ServiceUnavailableException)
+            {
+                logger.LogWarning("Service unavailable for {Model}, trying next...", model);
+                continue;
+            }
+            catch (HttpRequestException ex)
+            {
+                logger.LogWarning("Temporary error for {Model}: {Message}, trying next...", model, ex.Message);
                 continue;
             }
         }
 
-        throw new InvalidOperationException($"All models exhausted quota. Tried: {string.Join(", ", modelsToTry)}");
+        throw new InvalidOperationException($"All models failed. Tried: {string.Join(", ", modelsToTry)}");
     }
 
     private async Task<List<string>> FetchAvailableModelsAsync(string apiKey, CancellationToken cancellationToken)
@@ -54,7 +66,7 @@ public sealed class GeminiChatService(IHttpClientFactory httpClientFactory, ICon
             using var response = await httpClient.GetAsync(requestUrl, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                Console.WriteLine("Failed to fetch available models, using default.");
+                logger.LogWarning("Failed to fetch available models, using default.");
                 return new List<string> { DefaultModel };
             }
 
@@ -82,7 +94,7 @@ public sealed class GeminiChatService(IHttpClientFactory httpClientFactory, ICon
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error fetching available models: {ex.Message}");
+            logger.LogError(ex, "Error fetching available models");
             return new List<string> { DefaultModel };
         }
     }
@@ -106,10 +118,26 @@ public sealed class GeminiChatService(IHttpClientFactory httpClientFactory, ICon
         };
 
         using var response = await httpClient.PostAsJsonAsync(requestUrl, payload, cancellationToken);
+        
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            throw new QuotaExceededException($"Model {model} quota exceeded");
+        }
+
+        if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+        {
+            throw new ServiceUnavailableException($"Model {model} service unavailable");
+        }
+
+        if ((int)response.StatusCode >= 500)
+        {
+            throw new HttpRequestException($"Temporary server error ({response.StatusCode}): {await response.Content.ReadAsStringAsync(cancellationToken)}");
+        }
+
         if (!response.IsSuccessStatusCode)
         {
             var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new HttpRequestException($"Gemini error: {errorBody}");
+            throw new HttpRequestException($"Gemini error ({response.StatusCode}): {errorBody}");
         }
 
         using var document = await JsonDocument.ParseAsync(

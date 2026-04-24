@@ -1,7 +1,7 @@
 {
-  "name": "ai-chat-extension",
-  "displayName": "AI Chat",
-  "description": "AI Chatbot Extension prototype",
+  "name": "ai-extension",
+  "displayName": "AI Extension",
+  "description": "AI Extension prototype",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.80.0"
@@ -14,7 +14,7 @@
       "activitybar": [
         {
           "id": "ai-chat",
-          "title": "AI Chat",
+          "title": "AI Extension",
           "icon": "media/icon.svg"
         }
       ]
@@ -24,28 +24,37 @@
         {
           "type": "webview",
           "id": "aiChatPanel",
-          "name": "Chat"
+          "name": ""
         }
       ]
     },
     "commands": [
       {
+        "command": "aiChat.acceptOneToken",
+        "title": "AI Extension: Accept One Word/Token"
+      },
+      {
         "command": "aiChat.acceptNextLine",
-        "title": "AI Chat: Accept Next Line"
+        "title": "AI Extension: Accept Next Line"
       },
       {
         "command": "aiChat.acceptAll",
-        "title": "AI Chat: Accept All"
+        "title": "AI Extension: Accept Whole Block"
       },
       {
         "command": "aiChat.rejectPreview",
-        "title": "AI Chat: Reject Preview"
+        "title": "AI Extension: Reject Preview"
       }
     ],
     "keybindings": [
       {
+        "command": "aiChat.acceptOneToken",
+        "key": "ctrl+shift+right",
+        "when": "aiChatPreviewActive && editorTextFocus"
+      },
+      {
         "command": "aiChat.acceptNextLine",
-        "key": "alt+enter",
+        "key": "ctrl+shift+down",
         "when": "aiChatPreviewActive && editorTextFocus"
       },
       {

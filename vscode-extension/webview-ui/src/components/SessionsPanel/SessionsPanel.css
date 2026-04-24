@@ -2,11 +2,10 @@
 .sessions-panel {
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;  /* collapsed: only toolbar height */
+    flex-shrink: 0;
     overflow: hidden;
 }
 
-/* Expanded state: takes all remaining space */
 .sessions-panel.expanded {
     flex: 1;
     overflow: hidden;
@@ -22,7 +21,6 @@
     flex-shrink: 0;
 }
 
-/* Sessions toggle button (SESSIONS ▾) */
 .sessions-toggle-btn {
     display: flex;
     align-items: center;
@@ -83,7 +81,7 @@
     background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
 }
 
-/* Search bar (replaces toolbar when active) */
+/* Search bar */
 .sessions-search-bar {
     display: flex;
     align-items: center;
@@ -131,7 +129,6 @@
     opacity: 1 !important;
 }
 
-/* Search highlight */
 .search-highlight {
     background: var(--vscode-editor-findMatchHighlightBackground, #9e6a03);
     color: var(--vscode-editor-foreground, #d4d4d4);
@@ -227,7 +224,7 @@
     margin-top: 2px;
 }
 
-/* Session meta (right side) */
+/* Session meta */
 .session-meta {
     display: flex;
     flex-direction: column;
@@ -242,9 +239,10 @@
     white-space: nowrap;
 }
 
-/* Context menu trigger */
+/* Context menu */
 .ctx-wrap {
     position: relative;
+    z-index: 100;
 }
 
 .ctx-trigger {
@@ -271,16 +269,13 @@
     background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
 }
 
-/* Context menu dropdown */
 .ctx-menu {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 2px);
+    position: fixed;
     background: var(--vscode-menu-background, #2d2d30);
     border: 1px solid var(--vscode-menu-border, #454545);
     border-radius: 4px;
     min-width: 145px;
-    z-index: 400;
+    z-index: 10000;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
     overflow: hidden;
 }
@@ -305,8 +300,8 @@
 }
 
 .ctx-item.ctx-danger:hover {
-    background: #5a1d1d;
-    color: #f48771;
+    background: rgba(220, 104, 104, 0.15);
+    color: var(--vscode-inputValidation-errorForeground, #f48771);
 }
 
 .ctx-item.ctx-back {
@@ -378,6 +373,90 @@
     transform: rotate(90deg);
 }
 
+.folder-header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+.folder-menu-container {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.folder-menu-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    color: var(--vscode-descriptionForeground, #858585);
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    transition: background 0.1s, color 0.1s;
+}
+
+.folder-menu-btn:hover {
+    background: var(--vscode-list-hoverBackground, #2a2d2e);
+    color: var(--vscode-foreground, #d4d4d4);
+}
+
+.folder-menu {
+    position: fixed;
+    background: var(--vscode-menu-background, #2d2d30);
+    border: 1px solid var(--vscode-menu-border, #454545);
+    border-radius: 4px;
+    min-width: 145px;
+    z-index: 10000;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+    overflow: hidden;
+}
+
+.menu-item {
+    display: block;
+    width: 100%;
+    padding: 7px 14px;
+    background: transparent;
+    border: none;
+    color: var(--vscode-menu-foreground, #d4d4d4);
+    cursor: pointer;
+    text-align: left;
+    font-size: 13px;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.menu-item:hover {
+    background: var(--vscode-menu-selectionBackground, #0e639c);
+    color: var(--vscode-menu-selectionForeground, #ffffff);
+}
+
+.menu-item-danger:hover {
+    background: rgba(220, 104, 104, 0.15);
+    color: var(--vscode-inputValidation-errorForeground, #f48771);
+}
+
+.folder-name-input {
+    flex: 1;
+    padding: 2px 4px;
+    background: var(--vscode-input-background, #3c3c3c);
+    border: 1px solid var(--vscode-input-border, #555555);
+    color: var(--vscode-foreground, #d4d4d4);
+    font-size: 13px;
+    border-radius: 3px;
+    font-family: inherit;
+    outline: none;
+}
+
+.folder-name-input:focus {
+    border-color: var(--vscode-focusBorder, #007acc);
+    outline: none;
+}
+
 .folder-contents {
     border-left: 1px solid var(--vscode-sideBar-border, #3e3e42);
     margin-left: 18px;
@@ -398,25 +477,12 @@
     border: none;
     color: var(--vscode-textLink-foreground, #3794ff);
     cursor: pointer;
-    text-align: center;
     font-size: 12px;
     font-family: inherit;
-    opacity: 0.8;
-    transition: opacity 0.15s;
+    text-align: left;
+    transition: background 0.1s;
 }
 
 .load-more-btn:hover {
-    opacity: 1;
-    text-decoration: underline;
-}
-
-/* Scrollbar */
-.sessions-list::-webkit-scrollbar { width: 6px; }
-.sessions-list::-webkit-scrollbar-track { background: transparent; }
-.sessions-list::-webkit-scrollbar-thumb {
-    background: var(--vscode-scrollbarSlider-background, #797979);
-    border-radius: 3px;
-}
-.sessions-list::-webkit-scrollbar-thumb:hover {
-    background: var(--vscode-scrollbarSlider-hoverBackground, #a0a0a0);
+    background: var(--vscode-list-hoverBackground, #2a2d2e);
 }
