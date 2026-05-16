@@ -11,7 +11,7 @@ ExtensionPrototype/
 │   ├── Processors/            # ChatProcessor (orchestration logic)
 │   ├── Repositories/          # SupabaseRepository (data persistence)
 │   ├── Services/              # GeminiChatService (AI inference)
-│   ├── appsettings.json       # Config template (empty keys — safe to commit)
+│   ├── appsettings.json       # Config template
 │   └── appsettings.Development.json  # Your local secrets (git-ignored)
 ├── vscode-extension/          # VS Code Extension entry point
 │   └── webview-ui/            # React + TypeScript chat interface (Vite)
