@@ -47,6 +47,8 @@ Simply press **F5** in VS Code. This automatically:
 - Watches TypeScript files for changes
 - Launches the Extension Development Host (new VS Code window with extension loaded)
 
+> If you want to start the backend manually first, run `dotnet run` in `Extension.ApiService`, then start the frontend UI from `vscode-extension/webview-ui` before pressing **F5** in VS Code.
+
 ## Development Workflow
 
 ### Running Individual Components
@@ -59,15 +61,20 @@ If you need to run components separately:
 
 **Option 2: Manual Terminal Commands**
 ```bash
-# Terminal 1: Start API
+# Terminal 1: Start backend API
 cd Extension.ApiService
 dotnet run
 
-# Terminal 2: Start Extension Watcher
+# Terminal 2: Start frontend webview UI watcher
+cd vscode-extension/webview-ui
+npm install
+npm run dev
+
+# In another terminal, optionally watch the extension TypeScript too
 cd vscode-extension
 npm run watch
 
-# Then press F5 to debug
+# Then press F5 in VS Code to launch the extension
 ```
 
 ### Building for Production

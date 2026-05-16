@@ -74,7 +74,7 @@ function getRelativeTime(timestamp: number): string {
 
 function getConversationSnippet(conv: Conversation): string {
   const lastMessage = conv.messages[conv.messages.length - 1]
-  if (!lastMessage) return ''
+  if (!lastMessage || !lastMessage.content) return ''
   return lastMessage.content.replace(/\n/g, ' ').substring(0, SNIPPET_LENGTH)
 }
 
@@ -82,7 +82,7 @@ function matchesSearchQuery(conv: Conversation, query: string): boolean {
   if (!query) return true
   const q = query.toLowerCase()
   if (conv.title.toLowerCase().includes(q)) return true
-  return conv.messages.some(m => m.content.toLowerCase().includes(q))
+  return conv.messages.some(m => m.content?.toLowerCase().includes(q))
 }
 
 interface HighlightProps {
