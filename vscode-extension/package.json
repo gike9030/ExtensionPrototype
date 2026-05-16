@@ -7,7 +7,7 @@
     "vscode": "^1.80.0"
   },
   "categories": ["Other"],
-  "activationEvents": [],
+  "activationEvents": ["onStartupFinished", "onView:aiChatPanel"],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -24,7 +24,7 @@
         {
           "type": "webview",
           "id": "aiChatPanel",
-          "name": ""
+          "name": "AI Chat"
         }
       ]
     },

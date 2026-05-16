@@ -118,6 +118,15 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.registerWebviewViewProvider(ChatViewProvider.viewType, provider)
     );
 
+    const revealAiSidebar = async () => {
+        try {
+            await vscode.commands.executeCommand('workbench.view.extension.ai-chat');
+        } catch {
+        }
+    };
+
+    void revealAiSidebar();
+
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor(editor => broadcastActiveFile(editor))
     );
@@ -421,6 +430,9 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(handleMessage);
         webviewView.onDidDispose(() => { sidebarView = undefined; });
 
-        void Promise.resolve().then(() => broadcastActiveFile(vscode.window.activeTextEditor));
+        setTimeout(() => {
+            broadcastActiveFile(vscode.window.activeTextEditor);
+            handleGetWorkspaceFiles();
+        }, 500);
     }
 }
